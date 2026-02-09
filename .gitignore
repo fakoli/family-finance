@@ -1,0 +1,60 @@
+# Claude Code local settings
+.claude/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Data files (sensitive financial data)
+data/
+*.csv
+!backend/tests/fixtures/*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/build/
+*.tsbuildinfo
+
+# Docker
+docker-data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+
+# Celery
+celerybeat-schedule
+celerybeat-schedule.db
+*.pid
+*.sock

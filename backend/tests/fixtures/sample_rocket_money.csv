@@ -1,0 +1,9 @@
+Date,Original Date,Account Type,Account Name,Account Number,Institution Name,Name,Custom Name,Amount,Description,Category,Note,Ignored From,Tax Deductible,Transaction Tags
+2024-01-15,2024-01-14,Cash,Checking,1234,Chase,Starbucks,,4.50,STARBUCKS #1234,Dining & Drinks,,,,coffee
+2024-01-16,,Credit Card,Visa Platinum,5678,Citi,Amazon,,29.99,AMAZON.COM,Shopping,,,,
+2024-01-17,2024-01-16,Cash,Checking,1234,Chase,Whole Foods,,87.32,WHOLE FOODS MKT,Groceries,,,,groceries
+2024-01-18,,Cash,Checking,1234,Chase,Electric Company,,145.00,CITY ELECTRIC,Bills & Utilities,,,,
+2024-01-19,,Savings,Savings Account,9012,Chase,Transfer to Savings,,500.00,TRANSFER TO SAVINGS,Savings Transfer,,,,
+2024-01-20,,Credit Card,Visa Platinum,5678,Citi,Netflix,,15.99,NETFLIX.COM,Entertainment & Rec.,,,,streaming
+2024-01-21,,Cash,Checking,1234,Chase,Employer,Salary,-3500.00,DIRECT DEPOSIT,Income,,,,
+2024-01-22,,Credit Card,Visa Platinum,5678,Citi,Credit Card Payment,,200.00,PAYMENT THANK YOU,Credit Card Payment,,,,

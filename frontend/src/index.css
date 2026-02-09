@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --color-income: oklch(0.765 0.177 163.22);
+  --color-expense: oklch(0.712 0.194 13.43);
+}

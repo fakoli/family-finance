@@ -1,0 +1,42 @@
+[project]
+name = "familyfinance-backend"
+version = "0.1.0"
+description = "FamilyFinance API backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.32,<1",
+    "sqlalchemy[asyncio]>=2.0,<3",
+    "asyncpg>=0.30,<1",
+    "psycopg2-binary>=2.9,<3",
+    "alembic>=1.14,<2",
+    "pydantic>=2.10,<3",
+    "pydantic-settings>=2.7,<3",
+    "python-jose[cryptography]>=3.3,<4",
+    "bcrypt>=4.0,<5",
+    "pandas>=2.2,<3",
+    "pdfplumber>=0.11,<1",
+    "celery>=5.4,<6",
+    "redis>=5.2,<6",
+    "python-multipart>=0.0.18",
+    "anthropic>=0.42,<1",
+    "openai>=1.50,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.28,<1",
+    "pytest>=8,<9",
+    "pytest-asyncio>=0.24,<1",
+    "ruff>=0.8,<1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
