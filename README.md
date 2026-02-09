@@ -130,7 +130,17 @@ Run inside the backend container (`docker compose exec backend ...`) or with you
 | `python -m app.cli set-active --username NAME --inactive` | Deactivate a user |
 | `python -m app.cli reset-password --username NAME --password PASS` | Reset password |
 
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — system design, data flows, database schema, plugin system
+- [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) — detailed plans for all roadmap phases
+- [Roadmap](ROADMAP.md) — planned features across 4 phases
+- [Contributing](CONTRIBUTING.md) — how to contribute
+- [Changelog](CHANGELOG.md) — release history
+
 ## Architecture
+
+For the full architecture document, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ### Request Flow
 
