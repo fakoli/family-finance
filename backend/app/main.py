@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +14,7 @@ from app.api import (
     categories,
     dashboard,
     imports,
+    overview,
     parser_schemas,
     transactions,
 )
@@ -46,6 +47,7 @@ app.include_router(categories.router, prefix=api_prefix)
 app.include_router(dashboard.router, prefix=api_prefix)
 app.include_router(ai.router, prefix=api_prefix)
 app.include_router(admin.router, prefix=api_prefix)
+app.include_router(overview.router, prefix=api_prefix)
 app.include_router(parser_schemas.router, prefix=api_prefix)
 
 

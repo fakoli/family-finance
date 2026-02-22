@@ -2,11 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post, patch, del, uploadFile } from './client'
 import type {
   Account,
+  BalanceSheet,
   Category,
   Transaction,
   DashboardSummary,
   ImportRecord,
   AdminUser,
+  MerchantDeepDive,
+  MonthlyTrend,
+  OverviewKPIs,
+  SpendingBreakdown,
+  SubscriptionList,
   SystemStats,
   AdminUserCreate,
   AdminUserUpdate,
@@ -235,6 +241,74 @@ export function useAdminDeactivateUser() {
       void queryClient.invalidateQueries({ queryKey: adminKeys.users })
       void queryClient.invalidateQueries({ queryKey: adminKeys.stats })
     },
+  })
+}
+
+// Overview hooks
+const overviewKeys = {
+  kpis: (year: number) => ['overview', 'kpis', year] as const,
+  spending: (year: number) => ['overview', 'spending', year] as const,
+  balanceSheet: ['overview', 'balance-sheet'] as const,
+  trend: (year: number) => ['overview', 'trend', year] as const,
+  subscriptions: (year: number, category?: string) =>
+    ['overview', 'subscriptions', year, category] as const,
+  merchantDive: (merchant: string, year: number) =>
+    ['overview', 'merchant', merchant, year] as const,
+}
+
+export function useOverviewKPIs(year: number) {
+  return useQuery({
+    queryKey: overviewKeys.kpis(year),
+    queryFn: () => get<SingleResponse<OverviewKPIs>>(`/overview/kpi-cards?year=${year}`),
+    select: (data) => data.data,
+  })
+}
+
+export function useSpendingBreakdown(year: number) {
+  return useQuery({
+    queryKey: overviewKeys.spending(year),
+    queryFn: () =>
+      get<SingleResponse<SpendingBreakdown>>(`/overview/spending-breakdown?year=${year}`),
+    select: (data) => data.data,
+  })
+}
+
+export function useBalanceSheet() {
+  return useQuery({
+    queryKey: overviewKeys.balanceSheet,
+    queryFn: () => get<SingleResponse<BalanceSheet>>('/overview/balance-sheet'),
+    select: (data) => data.data,
+  })
+}
+
+export function useIncomeExpenseTrend(year: number) {
+  return useQuery({
+    queryKey: overviewKeys.trend(year),
+    queryFn: () => get<SingleResponse<MonthlyTrend[]>>(`/overview/income-expense-trend?year=${year}`),
+    select: (data) => data.data,
+  })
+}
+
+export function useSubscriptions(year: number, category?: string) {
+  const params = new URLSearchParams({ year: String(year) })
+  if (category) params.set('category_name', category)
+  return useQuery({
+    queryKey: overviewKeys.subscriptions(year, category),
+    queryFn: () =>
+      get<SingleResponse<SubscriptionList>>(`/overview/subscriptions?${params.toString()}`),
+    select: (data) => data.data,
+  })
+}
+
+export function useMerchantDeepDive(merchantName: string, year: number) {
+  return useQuery({
+    queryKey: overviewKeys.merchantDive(merchantName, year),
+    queryFn: () =>
+      get<SingleResponse<MerchantDeepDive>>(
+        `/overview/merchant-deep-dive?merchant_name=${encodeURIComponent(merchantName)}&year=${year}`,
+      ),
+    select: (data) => data.data,
+    enabled: !!merchantName,
   })
 }
 

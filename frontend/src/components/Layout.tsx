@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
+  FileBarChart,
   ArrowLeftRight,
   Landmark,
   Upload,
@@ -16,6 +17,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const baseNavItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/overview', label: 'Overview', icon: FileBarChart },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/accounts', label: 'Accounts', icon: Landmark },
   { to: '/imports', label: 'Import', icon: Upload },
