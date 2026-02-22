@@ -269,9 +269,7 @@ async def get_subscriptions(
     # Join category and filter by name
     sub_q = await db.execute(
         select(
-            sql_func.coalesce(Transaction.merchant_name, Transaction.description).label(
-                "merchant"
-            ),
+            sql_func.coalesce(Transaction.merchant_name, Transaction.description).label("merchant"),
             sql_func.sum(Transaction.amount_cents).label("total"),
             sql_func.count().label("cnt"),
         )
@@ -311,9 +309,7 @@ async def get_subscriptions(
     )
 
 
-async def get_overview_kpis(
-    db: AsyncSession, user_id: uuid.UUID, year: int
-) -> OverviewKPIs:
+async def get_overview_kpis(db: AsyncSession, user_id: uuid.UUID, year: int) -> OverviewKPIs:
     filters = _year_filters(user_id, year)
 
     totals_q = await db.execute(
@@ -352,9 +348,7 @@ async def get_overview_kpis(
     # Heuristic: transactions appearing 6+ times/year with similar amounts
     fixed_q = await db.execute(
         select(
-            sql_func.coalesce(Transaction.merchant_name, Transaction.description).label(
-                "merchant"
-            ),
+            sql_func.coalesce(Transaction.merchant_name, Transaction.description).label("merchant"),
             sql_func.avg(Transaction.amount_cents).label("avg_amount"),
             sql_func.count().label("cnt"),
         )

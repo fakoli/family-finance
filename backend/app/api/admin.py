@@ -131,20 +131,22 @@ async def system_stats(
     _admin: User = Depends(get_admin_user),
 ) -> dict:
     total_users = await db.scalar(select(func.count(User.id))) or 0
-    active_users = await db.scalar(
-        select(func.count(User.id)).where(User.is_active.is_(True))
-    ) or 0
+    active_users = await db.scalar(select(func.count(User.id)).where(User.is_active.is_(True))) or 0
     total_transactions = await db.scalar(select(func.count(Transaction.id))) or 0
     total_import_jobs = await db.scalar(select(func.count(ImportJob.id))) or 0
-    completed_import_jobs = await db.scalar(
-        select(func.count(ImportJob.id)).where(ImportJob.status == "completed")
-    ) or 0
-    failed_import_jobs = await db.scalar(
-        select(func.count(ImportJob.id)).where(ImportJob.status == "failed")
-    ) or 0
-    partially_failed_import_jobs = await db.scalar(
-        select(func.count(ImportJob.id)).where(ImportJob.status == "partially_failed")
-    ) or 0
+    completed_import_jobs = (
+        await db.scalar(select(func.count(ImportJob.id)).where(ImportJob.status == "completed"))
+        or 0
+    )
+    failed_import_jobs = (
+        await db.scalar(select(func.count(ImportJob.id)).where(ImportJob.status == "failed")) or 0
+    )
+    partially_failed_import_jobs = (
+        await db.scalar(
+            select(func.count(ImportJob.id)).where(ImportJob.status == "partially_failed")
+        )
+        or 0
+    )
 
     return {
         "data": {
@@ -164,9 +166,7 @@ async def all_import_jobs(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> dict:
-    result = await db.execute(
-        select(ImportJob).order_by(ImportJob.created_at.desc())
-    )
+    result = await db.execute(select(ImportJob).order_by(ImportJob.created_at.desc()))
     jobs = result.scalars().all()
     return {
         "data": [ImportJobResponse.model_validate(j) for j in jobs],

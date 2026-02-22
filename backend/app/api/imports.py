@@ -177,9 +177,7 @@ async def import_job_progress(
 
         while True:
             async with async_session_factory() as session:
-                result = await session.execute(
-                    select(ImportJob).where(ImportJob.id == job_id)
-                )
+                result = await session.execute(select(ImportJob).where(ImportJob.id == job_id))
                 job = result.scalar_one_or_none()
                 if job is None:
                     break

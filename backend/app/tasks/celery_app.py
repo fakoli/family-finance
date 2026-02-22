@@ -32,4 +32,5 @@ celery_app.autodiscover_tasks(["app.tasks"])
 def on_worker_init(**kwargs):  # type: ignore[no-untyped-def]
     """Discover plugins when the Celery worker starts."""
     from app.plugins import registry
+
     registry.discover()

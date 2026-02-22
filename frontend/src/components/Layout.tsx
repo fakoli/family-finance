@@ -2,10 +2,12 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   FileBarChart,
+  FileText,
   ArrowLeftRight,
   Landmark,
   Upload,
   Sparkles,
+  TrendingUp,
   Shield,
   LogOut,
   Menu,
@@ -18,6 +20,8 @@ import { useAuthStore } from '@/stores/auth'
 const baseNavItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/overview', label: 'Overview', icon: FileBarChart },
+  { to: '/net-worth', label: 'Net Worth', icon: TrendingUp },
+  { to: '/tax-insights', label: 'Tax Insights', icon: FileText },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/accounts', label: 'Accounts', icon: Landmark },
   { to: '/imports', label: 'Import', icon: Upload },

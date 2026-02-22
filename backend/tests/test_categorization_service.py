@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from unittest.mock import AsyncMock
+from datetime import date
+from typing import Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,17 +19,25 @@ from app.services.categorization_service import categorize_batch, categorize_tra
 class MockAIProvider(AIProviderPlugin):
     name = "mock_ai"
 
-    def __init__(self):
-        self.categorize = AsyncMock(return_value="Groceries")
-        self.categorize_batch = AsyncMock(
-            side_effect=lambda txns: [
-                {"category": "Groceries", "confidence": 0.9, "merchant_normalized": None}
-                for _ in txns
-            ]
-        )
-        self.query = AsyncMock(return_value="Mock answer")
-        self.normalize_merchant = AsyncMock(side_effect=lambda n: n)
-        self.summarize = AsyncMock(return_value="Mock summary")
+    async def categorize(self, description: str) -> str | None:
+        return "Groceries"
+
+    async def categorize_batch(
+        self, transactions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        return [
+            {"category": "Groceries", "confidence": 0.9, "merchant_normalized": None}
+            for _ in transactions
+        ]
+
+    async def query(self, question: str, context: dict[str, Any]) -> str:
+        return "Mock answer"
+
+    async def normalize_merchant(self, raw_name: str) -> str:
+        return raw_name
+
+    async def summarize(self, transactions: list[dict[str, Any]]) -> str:
+        return "Mock summary"
 
 
 async def _setup_data(db: AsyncSession) -> dict:
@@ -64,7 +73,7 @@ async def _setup_data(db: AsyncSession) -> dict:
 
     txn = Transaction(
         account_id=acct.id,
-        date="2025-01-15",
+        date=date(2025, 1, 15),
         amount_cents=5000,
         description="Whole Foods Market",
         merchant_name="Whole Foods",
@@ -102,7 +111,7 @@ async def test_categorize_batch_transactions(async_db: AsyncSession):
     acct = result.scalar_one()
     txn2 = Transaction(
         account_id=acct.id,
-        date="2025-01-20",
+        date=date(2025, 1, 20),
         amount_cents=3000,
         description="Trader Joe's",
     )

@@ -272,3 +272,70 @@ export interface OverviewKPIs {
   date_range_start: string
   date_range_end: string
 }
+
+// Net Worth / Brokerage types
+
+export interface NetWorthBreakdownItem {
+  label: string
+  amount_cents: number
+  type: string // "asset" or "liability"
+}
+
+export interface NetWorthSummary {
+  total_assets_cents: number
+  total_liabilities_cents: number
+  net_worth_cents: number
+  breakdown: NetWorthBreakdownItem[]
+}
+
+export interface BrokerageHolding {
+  id: string
+  user_id: string
+  account_id: string
+  statement_id: string | null
+  symbol: string
+  name: string
+  quantity: number
+  cost_basis_cents: number | null
+  market_value_cents: number
+  unrealized_gain_cents: number | null
+  snapshot_date: string
+}
+
+export interface NetWorthHistoryPoint {
+  date: string
+  net_worth_cents: number
+}
+
+export interface AssetAllocationItem {
+  category: string
+  amount_cents: number
+  percentage: number
+}
+
+// Tax types
+
+export interface TaxDocument {
+  id: string
+  user_id: string
+  statement_id: string
+  form_type: string
+  tax_year: number
+  issuer: string
+  extracted_data: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TaxSummary {
+  gross_income_cents: number
+  total_tax_cents: number
+  effective_rate: number
+  total_deductions_cents: number
+}
+
+export interface IncomeBreakdownItem {
+  source: string
+  amount_cents: number
+  description: string
+}

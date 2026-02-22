@@ -11,6 +11,7 @@ Usage:
     python -m app.cli retry-categorize --job-id <uuid>
     python -m app.cli import-errors [--job-id <uuid>]
     python -m app.cli force-complete --job-id <uuid>
+    python -m app.cli bulk-import --directory /path/to/files [--user-id <uuid>]
 """
 
 from __future__ import annotations
@@ -169,6 +170,74 @@ def import_errors(args: argparse.Namespace) -> None:
         print(f"\nTotal: {len(jobs)} job(s) with errors")
 
 
+def bulk_import(args: argparse.Namespace) -> None:
+    from pathlib import Path
+
+    from celery import chain
+
+    from app.config import settings
+    from app.tasks.import_tasks import (
+        SUPPORTED_EXTENSIONS,
+        categorize_import_task,
+        process_import_task,
+    )
+
+    uid = uuid.UUID(args.user_id) if args.user_id else uuid.UUID(settings.IMPORT_DEFAULT_USER_ID)
+    dir_path = Path(args.directory)
+
+    if not dir_path.is_dir():
+        print(f"Error: {args.directory} is not a directory")
+        sys.exit(1)
+
+    files = [f for f in dir_path.iterdir() if f.suffix.lower() in SUPPORTED_EXTENSIONS]
+    if not files:
+        print(f"No supported files found in {args.directory}")
+        return
+
+    print(f"Found {len(files)} files to import")
+
+    with sync_session_factory() as db:
+        for f in sorted(files):
+            # Check if already imported
+            existing = db.execute(
+                select(ImportJob).where(
+                    ImportJob.filename == f.name,
+                    ImportJob.source == "bulk",
+                )
+            ).scalar_one_or_none()
+
+            if existing:
+                print(f"  Skipping {f.name} (already imported)")
+                continue
+
+            # Create import job
+            job = ImportJob(
+                user_id=uid,
+                filename=f.name,
+                source_type="unknown",
+                status=ImportStatus.PENDING,
+                source="bulk",
+                file_path=str(f),
+            )
+            db.add(job)
+            db.commit()
+            db.refresh(job)
+
+            # Dispatch Celery chain
+            task_chain = chain(
+                process_import_task.s(str(job.id), str(f)),
+                categorize_import_task.s(),
+            )
+            result = task_chain.apply_async()
+
+            job.celery_task_id = result.id
+            db.commit()
+
+            print(f"  Dispatched {f.name} (job {job.id})")
+
+    print("All files dispatched for import")
+
+
 def force_complete(args: argparse.Namespace) -> None:
     with sync_session_factory() as db:
         job = db.execute(
@@ -240,6 +309,16 @@ def main() -> None:
     p_force = subparsers.add_parser("force-complete", help="Force an import job to COMPLETED")
     p_force.add_argument("--job-id", required=True, help="ImportJob UUID")
     p_force.set_defaults(func=force_complete)
+
+    # bulk-import
+    p_bulk = subparsers.add_parser(
+        "bulk-import", help="Import all supported files from a directory"
+    )
+    p_bulk.add_argument("--directory", required=True, help="Directory containing files to import")
+    p_bulk.add_argument(
+        "--user-id", default=None, help="User ID (defaults to IMPORT_DEFAULT_USER_ID)"
+    )
+    p_bulk.set_defaults(func=bulk_import)
 
     args = parser.parse_args()
     args.func(args)
