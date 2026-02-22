@@ -312,3 +312,30 @@ export interface AssetAllocationItem {
   amount_cents: number
   percentage: number
 }
+
+// Tax types
+
+export interface TaxDocument {
+  id: string
+  user_id: string
+  statement_id: string
+  form_type: string
+  tax_year: number
+  issuer: string
+  extracted_data: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TaxSummary {
+  gross_income_cents: number
+  total_tax_cents: number
+  effective_rate: number
+  total_deductions_cents: number
+}
+
+export interface IncomeBreakdownItem {
+  source: string
+  amount_cents: number
+  description: string
+}

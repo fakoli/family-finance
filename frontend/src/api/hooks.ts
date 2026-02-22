@@ -6,6 +6,9 @@ import type {
   BalanceSheet,
   BrokerageHolding,
   Category,
+  IncomeBreakdownItem,
+  TaxDocument,
+  TaxSummary,
   Transaction,
   DashboardSummary,
   ImportRecord,
@@ -352,6 +355,46 @@ export function useAssetAllocation() {
   return useQuery({
     queryKey: brokerageKeys.allocation,
     queryFn: () => get<SingleResponse<AssetAllocationItem[]>>('/brokerage/allocation'),
+    select: (data) => data.data,
+  })
+}
+
+// Tax hooks
+const taxKeys = {
+  summary: (year: number) => ['tax', 'summary', year] as const,
+  documents: (year: number) => ['tax', 'documents', year] as const,
+  incomeBreakdown: (year: number) => ['tax', 'income-breakdown', year] as const,
+  deductible: (year: number) => ['tax', 'deductible', year] as const,
+}
+
+export function useTaxSummary(year: number) {
+  return useQuery({
+    queryKey: taxKeys.summary(year),
+    queryFn: () => get<SingleResponse<TaxSummary>>(`/tax/summary?year=${year}`),
+    select: (data) => data.data,
+  })
+}
+
+export function useTaxDocuments(year: number) {
+  return useQuery({
+    queryKey: taxKeys.documents(year),
+    queryFn: () => get<PaginatedResponse<TaxDocument>>(`/tax/documents?year=${year}`),
+    select: (data) => data.data,
+  })
+}
+
+export function useIncomeBreakdown(year: number) {
+  return useQuery({
+    queryKey: taxKeys.incomeBreakdown(year),
+    queryFn: () => get<SingleResponse<IncomeBreakdownItem[]>>(`/tax/income-breakdown?year=${year}`),
+    select: (data) => data.data,
+  })
+}
+
+export function useTaxDeductibleTransactions(year: number) {
+  return useQuery({
+    queryKey: taxKeys.deductible(year),
+    queryFn: () => get<PaginatedResponse<Transaction>>(`/tax/deductible?year=${year}`),
     select: (data) => data.data,
   })
 }
