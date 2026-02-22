@@ -111,8 +111,19 @@ async def update_transaction(
     if txn is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
+    _ALLOWED_FIELDS = {
+        "description",
+        "merchant_name",
+        "category_id",
+        "custom_name",
+        "note",
+        "is_transfer",
+        "is_tax_deductible",
+        "tags",
+    }
     for field, value in body.model_dump(exclude_unset=True).items():
-        setattr(txn, field, value)
+        if field in _ALLOWED_FIELDS:
+            setattr(txn, field, value)
 
     await db.commit()
     await db.refresh(txn)

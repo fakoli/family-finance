@@ -153,11 +153,6 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
                     job.completed_at = datetime.now(UTC)
                     db.commit()
 
-                    # Clean up Redis
-                    redis_key = f"import_file:{job_id}"
-                    r = redis.Redis.from_url(settings.REDIS_URL)
-                    r.delete(redis_key)
-
                     return {
                         "job_id": job_id,
                         "status": "completed",
@@ -176,11 +171,6 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
                     job.status = ImportStatus.COMPLETED
                     job.completed_at = datetime.now(UTC)
                     db.commit()
-
-                    # Clean up Redis
-                    redis_key = f"import_file:{job_id}"
-                    r = redis.Redis.from_url(settings.REDIS_URL)
-                    r.delete(redis_key)
 
                     return {
                         "job_id": job_id,
@@ -214,11 +204,6 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
                         exc_info=True,
                     )
 
-            # Clean up Redis file after successful processing
-            redis_key = f"import_file:{job_id}"
-            r = redis.Redis.from_url(settings.REDIS_URL)
-            r.delete(redis_key)
-
             return {
                 "job_id": job_id,
                 "status": result_job.status.value,
@@ -239,6 +224,12 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
                 return {"job_id": job_id, "status": "failed", "error": str(exc)[:500]}
             raise self.retry(exc=exc)
         finally:
+            # Clean up Redis file content (always, even on failure)
+            try:
+                r = redis.Redis.from_url(settings.REDIS_URL)
+                r.delete(f"import_file:{job_id}")
+            except Exception:
+                logger.warning("Failed to clean up Redis key for job %s", job_id)
             # Clear PDF text extraction cache to free memory
             clear_text_cache()
 

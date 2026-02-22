@@ -69,8 +69,10 @@ async def update_category(
     if cat is None:
         raise HTTPException(status_code=404, detail="Category not found")
 
+    _ALLOWED_FIELDS = {"name", "parent_id", "icon", "color"}
     for field, value in body.model_dump(exclude_unset=True).items():
-        setattr(cat, field, value)
+        if field in _ALLOWED_FIELDS:
+            setattr(cat, field, value)
 
     await db.commit()
     await db.refresh(cat)

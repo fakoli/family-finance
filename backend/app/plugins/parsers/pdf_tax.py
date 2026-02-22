@@ -43,7 +43,7 @@ FORM_TYPE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"1099\s+Composite", re.IGNORECASE), "1099-COMPOSITE"),
 ]
 
-MODEL = "claude-sonnet-4-5-20250929"
+MODEL = settings.AI_MODEL_NAME
 
 
 def _detect_form_type(text: str) -> str:

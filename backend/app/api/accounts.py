@@ -93,6 +93,14 @@ async def update_account(
     if account is None:
         raise HTTPException(status_code=404, detail="Account not found")
 
+    _ALLOWED_FIELDS = {
+        "name",
+        "account_type",
+        "account_number_last4",
+        "is_shared",
+        "balance_cents",
+        "institution_id",
+    }
     updates = body.model_dump(exclude_unset=True)
     if "account_type" in updates:
         try:
@@ -101,7 +109,8 @@ async def update_account(
             raise HTTPException(status_code=422, detail="Invalid account type")
 
     for field, value in updates.items():
-        setattr(account, field, value)
+        if field in _ALLOWED_FIELDS:
+            setattr(account, field, value)
 
     await db.commit()
     await db.refresh(account)

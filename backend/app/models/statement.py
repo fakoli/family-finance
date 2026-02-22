@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -21,6 +21,7 @@ class DocumentType(enum.StrEnum):
 
 class Statement(Base):
     __tablename__ = "statements"
+    __table_args__ = (Index("ix_statements_user_id_document_type", "user_id", "document_type"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(

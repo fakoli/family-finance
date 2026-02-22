@@ -31,18 +31,30 @@ TERMINAL_STATUSES = {
 
 @router.get("/history", response_model=dict)
 async def import_history(
+    skip: int = 0,
+    limit: int = 50,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
+    from sqlalchemy import func as sql_func
+
+    total = (
+        await db.scalar(
+            select(sql_func.count(ImportJob.id)).where(ImportJob.user_id == current_user.id)
+        )
+        or 0
+    )
     result = await db.execute(
         select(ImportJob)
         .where(ImportJob.user_id == current_user.id)
         .order_by(ImportJob.created_at.desc())
+        .offset(skip)
+        .limit(min(limit, 200))
     )
     jobs = result.scalars().all()
     return {
         "data": [ImportJobResponse.model_validate(j) for j in jobs],
-        "total": len(jobs),
+        "total": total,
     }
 
 
@@ -57,6 +69,9 @@ async def upload_file(
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Empty file")
+    if len(content) > settings.MAX_UPLOAD_SIZE_BYTES:
+        max_mb = settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)
+        raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {max_mb} MB.")
 
     # Validate that a parser can handle this file
     registry.discover()

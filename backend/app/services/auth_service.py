@@ -54,6 +54,8 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> U
     user = result.scalar_one_or_none()
     if user is None or not verify_password(password, user.hashed_password):
         return None
+    if not user.is_active:
+        return None
     return user
 
 

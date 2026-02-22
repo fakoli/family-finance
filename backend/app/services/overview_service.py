@@ -40,6 +40,12 @@ LIABILITY_TYPES = {
     AccountType.MORTGAGE,
 }
 
+# Threshold for considering a recurring charge a "fixed obligation" (in cents)
+FIXED_OBLIGATION_MIN_CENTS = 30000  # $300/month
+
+# Default category for subscription detection
+DEFAULT_SUBSCRIPTION_CATEGORY = "Software & Tech"
+
 MONTH_NAMES = {i: calendar.month_abbr[i] for i in range(1, 13)}
 
 
@@ -149,7 +155,7 @@ async def get_merchant_deep_dive(
         *_year_filters(user_id, year),
         Transaction.amount_cents > 0,
         sql_func.coalesce(Transaction.merchant_name, Transaction.description).ilike(
-            f"%{merchant_name}%"
+            "%{}%".format(merchant_name.replace("%", r"\%").replace("_", r"\_"))
         ),
     ]
 
@@ -258,7 +264,10 @@ async def get_income_expense_trend(
 
 
 async def get_subscriptions(
-    db: AsyncSession, user_id: uuid.UUID, year: int, category_name: str = "Software & Tech"
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    year: int,
+    category_name: str = DEFAULT_SUBSCRIPTION_CATEGORY,
 ) -> SubscriptionList:
     filters = [
         *_year_filters(user_id, year),
@@ -297,7 +306,17 @@ async def get_subscriptions(
             annual_cents=int(r.total),
             monthly_average_cents=int(r.total) // num_months,
             charge_count=int(r.cnt),
-            frequency="Monthly" if int(r.cnt) >= 6 else "Annual" if int(r.cnt) <= 2 else None,
+            frequency=(
+                "Monthly"
+                if int(r.cnt) >= 10
+                else "Quarterly"
+                if int(r.cnt) >= 4
+                else "Annual"
+                if int(r.cnt) >= 2
+                else "One-time"
+                if int(r.cnt) == 1
+                else None
+            ),
         )
         for r in rows
     ]
@@ -359,7 +378,7 @@ async def get_overview_kpis(db: AsyncSession, user_id: uuid.UUID, year: int) -> 
         )
         .group_by("merchant")
         .having(sql_func.count() >= 6)
-        .having(sql_func.avg(Transaction.amount_cents) > 30000)  # >$300/mo
+        .having(sql_func.avg(Transaction.amount_cents) > FIXED_OBLIGATION_MIN_CENTS)
     )
     fixed_rows = fixed_q.all()
     monthly_fixed = sum(int(r.avg_amount) for r in fixed_rows)

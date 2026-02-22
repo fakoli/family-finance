@@ -21,12 +21,13 @@ from app.api import (
     tax,
     transactions,
 )
-from app.config import settings
+from app.config import settings, validate_settings
 from app.plugins.registry import discover
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    validate_settings()
     discover()
     yield
 

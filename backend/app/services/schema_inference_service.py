@@ -66,7 +66,7 @@ async def infer_schema(filename: str, file_content: bytes) -> dict:
     client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
     response = await client.messages.create(
-        model="claude-sonnet-4-5-20250929",
+        model=settings.AI_MODEL_NAME,
         max_tokens=2048,
         messages=[
             {

@@ -65,7 +65,7 @@ ACCOUNT_LAST4_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-MODEL = "claude-sonnet-4-5-20250929"
+MODEL = settings.AI_MODEL_NAME
 
 
 class PDFStatementParser(FileParserPlugin):
