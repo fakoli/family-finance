@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import io
 import json
 import logging
 import re
 from typing import Any
 
 import anthropic
-import pdfplumber
 
 from app.config import settings
 from app.plugins import registry
 from app.plugins.base import FileParserPlugin
+from app.plugins.parsers._pdf_utils import extract_text, strip_code_fences
 
 logger = logging.getLogger(__name__)
 
@@ -69,28 +68,6 @@ ACCOUNT_LAST4_PATTERN = re.compile(
 MODEL = "claude-sonnet-4-5-20250929"
 
 
-def _extract_text(file_content: bytes, max_pages: int | None = None) -> str:
-    """Extract text from a PDF using pdfplumber."""
-    try:
-        with pdfplumber.open(io.BytesIO(file_content)) as pdf:
-            pages = pdf.pages[:max_pages] if max_pages else pdf.pages
-            return "\n\n".join(page.extract_text() or "" for page in pages)
-    except Exception:
-        logger.exception("Failed to extract text from PDF")
-        return ""
-
-
-def _strip_code_fences(raw: str) -> str:
-    """Strip markdown code fences from Claude API response."""
-    text = raw.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        lines = lines[1:]  # Remove opening fence
-        if lines and lines[-1].startswith("```"):
-            lines = lines[:-1]
-        text = "\n".join(lines)
-    return text
-
 
 class PDFStatementParser(FileParserPlugin):
     name = "pdf_statement"
@@ -100,7 +77,7 @@ class PDFStatementParser(FileParserPlugin):
         if not filename.lower().endswith(".pdf"):
             return False
         try:
-            text = _extract_text(file_content, max_pages=2)
+            text = extract_text(file_content)
             if not text:
                 return False
 
@@ -138,7 +115,7 @@ class PDFStatementParser(FileParserPlugin):
         return match.group(1) if match else ""
 
     async def parse(self, file_content: bytes, filename: str) -> list[dict[str, Any]]:
-        text = _extract_text(file_content)
+        text = extract_text(file_content)
         if not text:
             logger.warning("No text extracted from PDF: %s", filename)
             return []
@@ -169,7 +146,7 @@ class PDFStatementParser(FileParserPlugin):
                 messages=[{"role": "user", "content": prompt}],
             )
             raw = message.content[0].text.strip()
-            raw = _strip_code_fences(raw)
+            raw = strip_code_fences(raw)
             transactions: list[dict[str, Any]] = json.loads(raw)
         except Exception:
             logger.exception("Claude API call failed for PDF statement: %s", filename)

@@ -17,6 +17,7 @@ from app.models.category import Category
 from app.models.import_job import ImportJob, ImportStatus
 from app.models.transaction import Transaction
 from app.plugins import registry
+from app.plugins.parsers._pdf_utils import clear_text_cache
 from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -188,6 +189,7 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
                     }
 
             # Default: standard transaction import
+            # Pass pre_parsed data if we already parsed above (avoids double Claude API call)
             result_job = run_import_sync(
                 db=db,
                 user_id=job.user_id,
@@ -195,6 +197,7 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
                 file_content=file_content,
                 job_id=job_uuid,
                 on_progress=on_progress,
+                pre_parsed=parsed if (parser is not None and parsed) else None,
             )
 
             # For PDF transaction imports, also create a statement record
@@ -235,6 +238,9 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
             if self.request.retries >= self.max_retries:
                 return {"job_id": job_id, "status": "failed", "error": str(exc)[:500]}
             raise self.retry(exc=exc)
+        finally:
+            # Clear PDF text extraction cache to free memory
+            clear_text_cache()
 
 
 @celery_app.task(name="app.tasks.import_tasks.categorize_import_task")

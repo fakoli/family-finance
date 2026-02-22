@@ -327,34 +327,55 @@ def run_import_sync(
     file_content: bytes,
     job_id: uuid.UUID,
     on_progress: Callable[[int], None] | None = None,
+    pre_parsed: list[dict] | None = None,
 ) -> ImportJob:
-    """Synchronous import for Celery workers. Operates on a pre-created ImportJob."""
-    # Detect parser
-    parsers = registry.get_all("parser")
-    parser = None
-    for p in parsers.values():
-        if p.detect(file_content, filename):
-            parser = p
-            break
+    """Synchronous import for Celery workers. Operates on a pre-created ImportJob.
 
+    If pre_parsed is provided, skip parser detection and parsing (avoids double
+    Claude API calls for PDFs that were already parsed during routing).
+    """
     job = db.execute(select(ImportJob).where(ImportJob.id == job_id)).scalar_one()
 
-    if parser is None:
-        job.status = ImportStatus.FAILED
-        job.error_message = "No parser found for this file format"
+    if pre_parsed is not None:
+        # Use pre-parsed data — parser already ran in the caller
+        parsed = pre_parsed
+        # Still detect parser for source_type label
+        parsers = registry.get_all("parser")
+        detected = None
+        for p in parsers.values():
+            if p.detect(file_content, filename):
+                detected = p
+                break
+        job.source_type = detected.name if detected else "unknown"
+        job.status = ImportStatus.PROCESSING
+        job.total_rows = len(parsed)
         db.commit()
-        return job
+    else:
+        # Detect parser
+        parsers = registry.get_all("parser")
+        parser = None
+        for p in parsers.values():
+            if p.detect(file_content, filename):
+                parser = p
+                break
 
-    job.source_type = parser.name
-    job.status = ImportStatus.PROCESSING
-    db.commit()
+        if parser is None:
+            job.status = ImportStatus.FAILED
+            job.error_message = "No parser found for this file format"
+            db.commit()
+            return job
 
-    try:
+        job.source_type = parser.name
+        job.status = ImportStatus.PROCESSING
+        db.commit()
+
         # parser.parse() is async — run it in a new event loop
         parsed = asyncio.run(parser.parse(file_content, filename))
         job.total_rows = len(parsed)
         db.commit()
 
+    # Import loop — shared by both pre_parsed and fresh parse paths
+    try:
         imported = 0
         duplicates = 0
 
@@ -371,7 +392,10 @@ def run_import_sync(
             institution = inst_cache[inst_name]
 
             # Account
-            acct_key = f"{inst_name}|{row['account_name']}|{row.get('account_number_last4', '')}"
+            acct_key = (
+                f"{inst_name}|{row['account_name']}"
+                f"|{row.get('account_number_last4', '')}"
+            )
             if acct_key not in acct_cache:
                 acct_cache[acct_key] = _get_or_create_account_sync(
                     db,
@@ -392,13 +416,17 @@ def run_import_sync(
             # Parse date
             txn_date = date.fromisoformat(row["date"])
             original_date = (
-                date.fromisoformat(row["original_date"]) if row.get("original_date") else None
+                date.fromisoformat(row["original_date"])
+                if row.get("original_date")
+                else None
             )
 
             # Deduplicate
             use_fuzzy = row.get("_use_fuzzy_dedup", False)
             if use_fuzzy:
-                is_dup = _is_fuzzy_duplicate_sync(db, account.id, txn_date, row["amount_cents"])
+                is_dup = _is_fuzzy_duplicate_sync(
+                    db, account.id, txn_date, row["amount_cents"]
+                )
             else:
                 is_dup = _is_duplicate_sync(
                     db, account.id, txn_date, row["amount_cents"], row["description"]
@@ -485,7 +513,12 @@ def create_statement_record(
         import_job_id=job.id,
         document_type=doc_type,
         filename=filename,
-        institution_name=meta.get("institution_name", "Unknown"),
+        institution_name=(
+            meta.get("institution_name")
+            or meta.get("institution")
+            or meta.get("issuer")
+            or "Unknown"
+        ),
         period_start=(
             date.fromisoformat(meta["period_start"]) if meta.get("period_start") else None
         ),

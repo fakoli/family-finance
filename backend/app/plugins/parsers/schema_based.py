@@ -57,9 +57,7 @@ class SchemaBasedParser(FileParserPlugin):
         if not self._loaded:
             self._load_schemas()
 
-    def _match_schema(
-        self, file_content: bytes, filename: str
-    ) -> dict[str, Any] | None:
+    def _match_schema(self, file_content: bytes, filename: str) -> dict[str, Any] | None:
         """Find the first schema whose detection_rules match the file."""
         self._ensure_loaded()
         for schema in self._schemas:
@@ -69,9 +67,7 @@ class SchemaBasedParser(FileParserPlugin):
             return schema
         return None
 
-    def _check_rules(
-        self, rules: dict[str, Any], file_content: bytes, filename: str
-    ) -> bool:
+    def _check_rules(self, rules: dict[str, Any], file_content: bytes, filename: str) -> bool:
         """Evaluate detection_rules against file content and filename.
 
         Supported rules:
@@ -109,9 +105,7 @@ class SchemaBasedParser(FileParserPlugin):
     def detect(self, file_content: bytes, filename: str) -> bool:
         return self._match_schema(file_content, filename) is not None
 
-    async def parse(
-        self, file_content: bytes, filename: str
-    ) -> list[dict[str, Any]]:
+    async def parse(self, file_content: bytes, filename: str) -> list[dict[str, Any]]:
         schema = self._match_schema(file_content, filename)
         if schema is None:
             return []
@@ -165,9 +159,7 @@ class SchemaBasedParser(FileParserPlugin):
 
             results.append(record)
 
-        logger.info(
-            "Parsed %d rows using schema '%s'", len(results), schema["name"]
-        )
+        logger.info("Parsed %d rows using schema '%s'", len(results), schema["name"])
         return results
 
 
