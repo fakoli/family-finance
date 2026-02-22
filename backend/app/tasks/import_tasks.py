@@ -21,7 +21,7 @@ from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_EXTENSIONS = {".csv", ".ofx", ".qfx"}
+SUPPORTED_EXTENSIONS = {".csv", ".ofx", ".qfx", ".pdf"}
 
 
 def _ensure_plugins() -> None:
@@ -96,7 +96,7 @@ def scan_import_directory() -> dict:
 )
 def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # type: ignore[no-untyped-def]
     """Process an import job. Reads file from disk (watch) or Redis (upload)."""
-    from app.services.import_service import run_import_sync
+    from app.services.import_service import create_statement_record, run_import_sync
 
     _ensure_plugins()
 
@@ -127,6 +127,67 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
             logger.info("Import %s: processed %d rows", job_id, count)
 
         try:
+            # Pre-parse to check for special document types (brokerage/tax PDFs)
+            parsers = registry.get_all("parser")
+            parser = None
+            for p in parsers.values():
+                if p.detect(file_content, job.filename):
+                    parser = p
+                    break
+
+            if parser is not None:
+                parsed = asyncio.run(parser.parse(file_content, job.filename))
+
+                # Route brokerage statements to brokerage_service
+                if parsed and parsed[0].get("_document_type") == "brokerage_statement":
+                    from app.services.brokerage_service import save_brokerage_holdings
+
+                    job.source_type = parser.name
+                    job.status = ImportStatus.PROCESSING
+                    db.commit()
+
+                    save_brokerage_holdings(db, job.user_id, parsed, job)
+                    create_statement_record(db, job.user_id, job.filename, parsed, job)
+                    job.status = ImportStatus.COMPLETED
+                    job.completed_at = datetime.now(UTC)
+                    db.commit()
+
+                    # Clean up Redis
+                    redis_key = f"import_file:{job_id}"
+                    r = redis.Redis.from_url(settings.REDIS_URL)
+                    r.delete(redis_key)
+
+                    return {
+                        "job_id": job_id,
+                        "status": "completed",
+                        "type": "brokerage",
+                    }
+
+                # Route tax documents to tax_service
+                if parsed and parsed[0].get("_document_type") == "tax_form":
+                    from app.services.tax_service import save_tax_document
+
+                    job.source_type = parser.name
+                    job.status = ImportStatus.PROCESSING
+                    db.commit()
+
+                    save_tax_document(db, job.user_id, parsed, job)
+                    job.status = ImportStatus.COMPLETED
+                    job.completed_at = datetime.now(UTC)
+                    db.commit()
+
+                    # Clean up Redis
+                    redis_key = f"import_file:{job_id}"
+                    r = redis.Redis.from_url(settings.REDIS_URL)
+                    r.delete(redis_key)
+
+                    return {
+                        "job_id": job_id,
+                        "status": "completed",
+                        "type": "tax",
+                    }
+
+            # Default: standard transaction import
             result_job = run_import_sync(
                 db=db,
                 user_id=job.user_id,
@@ -135,6 +196,20 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
                 job_id=job_uuid,
                 on_progress=on_progress,
             )
+
+            # For PDF transaction imports, also create a statement record
+            if job.filename.lower().endswith(".pdf") and parser is not None:
+                try:
+                    # Use the already-parsed data from the routing check above
+                    if parsed:
+                        create_statement_record(db, job.user_id, job.filename, parsed, result_job)
+                        db.commit()
+                except Exception:
+                    logger.warning(
+                        "Failed to create statement record for PDF import %s",
+                        job_id,
+                        exc_info=True,
+                    )
 
             # Clean up Redis file after successful processing
             redis_key = f"import_file:{job_id}"
@@ -152,9 +227,7 @@ def process_import_task(self, job_id: str, file_path: str | None) -> dict:  # ty
         except Exception as exc:
             logger.exception("Import task failed for job %s", job_id)
             db.rollback()
-            job = db.execute(
-                select(ImportJob).where(ImportJob.id == job_uuid)
-            ).scalar_one()
+            job = db.execute(select(ImportJob).where(ImportJob.id == job_uuid)).scalar_one()
             job.status = ImportStatus.FAILED
             job.error_message = str(exc)[:1000]
             db.commit()
@@ -248,9 +321,7 @@ def categorize_import_task(import_result: dict) -> dict:
 
                 # Update progress
                 with sync_session_factory() as db:
-                    job = db.execute(
-                        select(ImportJob).where(ImportJob.id == job_uuid)
-                    ).scalar_one()
+                    job = db.execute(select(ImportJob).where(ImportJob.id == job_uuid)).scalar_one()
                     job.categorized_rows = categorized
                     db.commit()
 
@@ -268,9 +339,7 @@ def categorize_import_task(import_result: dict) -> dict:
 
     # Always mark completed — categorization is best-effort
     with sync_session_factory() as db:
-        job = db.execute(
-            select(ImportJob).where(ImportJob.id == job_uuid)
-        ).scalar_one()
+        job = db.execute(select(ImportJob).where(ImportJob.id == job_uuid)).scalar_one()
         job.status = ImportStatus.COMPLETED
         job.completed_at = datetime.now(UTC)
         if categorization_errors:

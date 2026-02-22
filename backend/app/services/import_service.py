@@ -5,6 +5,7 @@ import logging
 import uuid
 from collections.abc import Callable
 from datetime import UTC, date, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,12 +18,16 @@ from app.models.institution import Institution
 from app.models.transaction import Transaction
 from app.plugins import registry
 
+if TYPE_CHECKING:
+    from app.models.statement import Statement
+
 logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
 # Async helpers (used by the API route)
 # ---------------------------------------------------------------------------
+
 
 async def _get_or_create_institution(db: AsyncSession, name: str) -> Institution:
     result = await db.execute(select(Institution).where(Institution.name == name))
@@ -85,12 +90,14 @@ async def _is_duplicate(
     description: str,
 ) -> bool:
     result = await db.execute(
-        select(Transaction.id).where(
+        select(Transaction.id)
+        .where(
             Transaction.account_id == account_id,
             Transaction.date == txn_date,
             Transaction.amount_cents == amount_cents,
             Transaction.description == description,
-        ).limit(1)
+        )
+        .limit(1)
     )
     return result.scalar_one_or_none() is not None
 
@@ -220,6 +227,7 @@ async def run_import(
 # Sync helpers (used by Celery workers)
 # ---------------------------------------------------------------------------
 
+
 def _get_or_create_institution_sync(db: Session, name: str) -> Institution:
     result = db.execute(select(Institution).where(Institution.name == name))
     inst = result.scalar_one_or_none()
@@ -281,12 +289,33 @@ def _is_duplicate_sync(
     description: str,
 ) -> bool:
     result = db.execute(
-        select(Transaction.id).where(
+        select(Transaction.id)
+        .where(
             Transaction.account_id == account_id,
             Transaction.date == txn_date,
             Transaction.amount_cents == amount_cents,
             Transaction.description == description,
-        ).limit(1)
+        )
+        .limit(1)
+    )
+    return result.scalar_one_or_none() is not None
+
+
+def _is_fuzzy_duplicate_sync(
+    db: Session,
+    account_id: uuid.UUID,
+    txn_date: date,
+    amount_cents: int,
+) -> bool:
+    """Check for cross-source duplicates (same account, date, amount but different description)."""
+    result = db.execute(
+        select(Transaction.id)
+        .where(
+            Transaction.account_id == account_id,
+            Transaction.date == txn_date,
+            Transaction.amount_cents == amount_cents,
+        )
+        .limit(1)
     )
     return result.scalar_one_or_none() is not None
 
@@ -367,9 +396,15 @@ def run_import_sync(
             )
 
             # Deduplicate
-            if _is_duplicate_sync(
-                db, account.id, txn_date, row["amount_cents"], row["description"]
-            ):
+            use_fuzzy = row.get("_use_fuzzy_dedup", False)
+            if use_fuzzy:
+                is_dup = _is_fuzzy_duplicate_sync(db, account.id, txn_date, row["amount_cents"])
+            else:
+                is_dup = _is_duplicate_sync(
+                    db, account.id, txn_date, row["amount_cents"], row["description"]
+                )
+
+            if is_dup:
                 duplicates += 1
             else:
                 txn = Transaction(
@@ -409,3 +444,56 @@ def run_import_sync(
         db.commit()
 
     return job
+
+
+# ---------------------------------------------------------------------------
+# Statement record creation (used by import_tasks for PDF imports)
+# ---------------------------------------------------------------------------
+
+
+def create_statement_record(
+    db: Session,
+    user_id: uuid.UUID,
+    filename: str,
+    parsed_data: list[dict],
+    job: ImportJob,
+) -> Statement:
+    """Create a Statement record for an imported PDF."""
+    from app.models.statement import DocumentType, Statement
+
+    # Get metadata from first parsed row
+    meta = parsed_data[0].get("_statement_metadata", {}) if parsed_data else {}
+
+    # Determine document type
+    doc_type_str = parsed_data[0].get("_document_type", "") if parsed_data else ""
+    if doc_type_str == "brokerage_statement":
+        doc_type = DocumentType.BROKERAGE_STATEMENT
+    elif doc_type_str == "tax_form":
+        doc_type = DocumentType.TAX_FORM
+    else:
+        # Determine from account type
+        acct_type = meta.get("account_type", "")
+        if acct_type == "mortgage":
+            doc_type = DocumentType.MORTGAGE_STATEMENT
+        elif acct_type == "credit_card":
+            doc_type = DocumentType.CREDIT_CARD_STATEMENT
+        else:
+            doc_type = DocumentType.BANK_STATEMENT
+
+    stmt = Statement(
+        user_id=user_id,
+        import_job_id=job.id,
+        document_type=doc_type,
+        filename=filename,
+        institution_name=meta.get("institution_name", "Unknown"),
+        period_start=(
+            date.fromisoformat(meta["period_start"]) if meta.get("period_start") else None
+        ),
+        period_end=(date.fromisoformat(meta["period_end"]) if meta.get("period_end") else None),
+        tax_year=meta.get("tax_year"),
+        metadata_=meta,
+        file_path=job.file_path or "",
+    )
+    db.add(stmt)
+    db.flush()
+    return stmt
