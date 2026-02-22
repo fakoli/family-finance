@@ -20,6 +20,7 @@ class AccountUpdate(BaseModel):
     name: str | None = None
     account_type: str | None = None
     is_shared: bool | None = None
+    balance_cents: int | None = None
 
 
 class AccountResponse(BaseModel):

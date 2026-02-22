@@ -183,3 +183,92 @@ export interface AdminUserUpdate {
   is_admin?: boolean
   password?: string
 }
+
+// Overview types
+
+export interface MerchantTotal {
+  merchant_name: string
+  total_cents: number
+  transaction_count: number
+}
+
+export interface OverviewCategorySpending {
+  category_id: string | null
+  category_name: string
+  annual_cents: number
+  monthly_average_cents: number
+  transaction_count: number
+  top_merchants: MerchantTotal[]
+}
+
+export interface SpendingBreakdown {
+  year: number
+  total_spending_cents: number
+  monthly_average_cents: number
+  categories: OverviewCategorySpending[]
+}
+
+export interface MonthlyMerchantData {
+  month: number
+  month_name: string
+  total_cents: number
+  order_count: number
+}
+
+export interface MerchantDeepDive {
+  merchant_name: string
+  year: number
+  total_cents: number
+  order_count: number
+  average_order_cents: number
+  monthly: MonthlyMerchantData[]
+}
+
+export interface BalanceSheetEntry {
+  account_id: string
+  account_name: string
+  institution_name: string
+  account_type: string
+  balance_cents: number
+  account_number_last4: string | null
+}
+
+export interface BalanceSheet {
+  assets: BalanceSheetEntry[]
+  liabilities: BalanceSheetEntry[]
+  total_assets_cents: number
+  total_liabilities_cents: number
+  net_worth_cents: number
+}
+
+export interface MonthlyTrend {
+  month: number
+  month_name: string
+  income_cents: number
+  expense_cents: number
+  net_cents: number
+}
+
+export interface SubscriptionEntry {
+  merchant_name: string
+  annual_cents: number
+  monthly_average_cents: number
+  charge_count: number
+  frequency: string | null
+}
+
+export interface SubscriptionList {
+  category_name: string
+  total_annual_cents: number
+  subscriptions: SubscriptionEntry[]
+}
+
+export interface OverviewKPIs {
+  total_income_cents: number
+  total_spending_cents: number
+  monthly_spending_average_cents: number
+  monthly_fixed_obligations_cents: number
+  transaction_count: number
+  date_range_start: string
+  date_range_end: string
+}

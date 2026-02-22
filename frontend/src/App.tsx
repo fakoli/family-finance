@@ -10,6 +10,7 @@ const TransactionsPage = lazy(() => import('@/pages/Transactions'))
 const AccountsPage = lazy(() => import('@/pages/Accounts'))
 const ImportsPage = lazy(() => import('@/pages/Imports'))
 const AIChatPage = lazy(() => import('@/pages/AIChat'))
+const OverviewPage = lazy(() => import('@/pages/Overview'))
 const AdminPage = lazy(() => import('@/pages/Admin'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -40,6 +41,7 @@ export function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+            <Route path="overview" element={<OverviewPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="accounts" element={<AccountsPage />} />
             <Route path="imports" element={<ImportsPage />} />
