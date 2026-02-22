@@ -82,9 +82,7 @@ class PDFBrokerageParser(FileParserPlugin):
             text_lower = text.lower()
 
             # Check if this is primarily a tax form vs. an investment report
-            tax_primary = sum(
-                1 for kw in TAX_FORM_PRIMARY_KEYWORDS if kw.lower() in text_lower
-            )
+            tax_primary = sum(1 for kw in TAX_FORM_PRIMARY_KEYWORDS if kw.lower() in text_lower)
             investment_report = sum(
                 1 for kw in INVESTMENT_REPORT_KEYWORDS if kw.lower() in text_lower
             )
