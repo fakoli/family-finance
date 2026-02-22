@@ -11,6 +11,7 @@ const AccountsPage = lazy(() => import('@/pages/Accounts'))
 const ImportsPage = lazy(() => import('@/pages/Imports'))
 const AIChatPage = lazy(() => import('@/pages/AIChat'))
 const OverviewPage = lazy(() => import('@/pages/Overview'))
+const NetWorthPage = lazy(() => import('@/pages/NetWorth'))
 const AdminPage = lazy(() => import('@/pages/Admin'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -46,6 +47,7 @@ export function App() {
             <Route path="accounts" element={<AccountsPage />} />
             <Route path="imports" element={<ImportsPage />} />
             <Route path="ai" element={<AIChatPage />} />
+            <Route path="net-worth" element={<NetWorthPage />} />
             <Route path="admin" element={<AdminPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

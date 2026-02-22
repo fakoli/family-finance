@@ -2,7 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post, patch, del, uploadFile } from './client'
 import type {
   Account,
+  AssetAllocationItem,
   BalanceSheet,
+  BrokerageHolding,
   Category,
   Transaction,
   DashboardSummary,
@@ -10,6 +12,8 @@ import type {
   AdminUser,
   MerchantDeepDive,
   MonthlyTrend,
+  NetWorthHistoryPoint,
+  NetWorthSummary,
   OverviewKPIs,
   SpendingBreakdown,
   SubscriptionList,
@@ -309,6 +313,46 @@ export function useMerchantDeepDive(merchantName: string, year: number) {
       ),
     select: (data) => data.data,
     enabled: !!merchantName,
+  })
+}
+
+// Brokerage / Net Worth hooks
+const brokerageKeys = {
+  summary: ['brokerage', 'summary'] as const,
+  holdings: ['brokerage', 'holdings'] as const,
+  history: ['brokerage', 'history'] as const,
+  allocation: ['brokerage', 'allocation'] as const,
+}
+
+export function useNetWorthSummary() {
+  return useQuery({
+    queryKey: brokerageKeys.summary,
+    queryFn: () => get<SingleResponse<NetWorthSummary>>('/brokerage/summary'),
+    select: (data) => data.data,
+  })
+}
+
+export function useBrokerageHoldings() {
+  return useQuery({
+    queryKey: brokerageKeys.holdings,
+    queryFn: () => get<PaginatedResponse<BrokerageHolding>>('/brokerage/holdings'),
+    select: (data) => data.data,
+  })
+}
+
+export function useNetWorthHistory() {
+  return useQuery({
+    queryKey: brokerageKeys.history,
+    queryFn: () => get<SingleResponse<NetWorthHistoryPoint[]>>('/brokerage/history'),
+    select: (data) => data.data,
+  })
+}
+
+export function useAssetAllocation() {
+  return useQuery({
+    queryKey: brokerageKeys.allocation,
+    queryFn: () => get<SingleResponse<AssetAllocationItem[]>>('/brokerage/allocation'),
+    select: (data) => data.data,
   })
 }
 
