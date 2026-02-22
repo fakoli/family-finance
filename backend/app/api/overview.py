@@ -20,7 +20,7 @@ router = APIRouter(prefix="/overview", tags=["overview"])
 
 @router.get("/spending-breakdown", response_model=dict)
 async def spending_breakdown(
-    year: int = Query(...),
+    year: int = Query(..., ge=2000, le=2100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
@@ -31,7 +31,7 @@ async def spending_breakdown(
 @router.get("/merchant-deep-dive", response_model=dict)
 async def merchant_deep_dive(
     merchant_name: str = Query(...),
-    year: int = Query(...),
+    year: int = Query(..., ge=2000, le=2100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
@@ -50,7 +50,7 @@ async def balance_sheet(
 
 @router.get("/income-expense-trend", response_model=dict)
 async def income_expense_trend(
-    year: int = Query(...),
+    year: int = Query(..., ge=2000, le=2100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
@@ -60,7 +60,7 @@ async def income_expense_trend(
 
 @router.get("/subscriptions", response_model=dict)
 async def subscriptions(
-    year: int = Query(...),
+    year: int = Query(..., ge=2000, le=2100),
     category_name: str = Query("Software & Tech"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -71,7 +71,7 @@ async def subscriptions(
 
 @router.get("/kpi-cards", response_model=dict)
 async def kpi_cards(
-    year: int = Query(...),
+    year: int = Query(..., ge=2000, le=2100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:

@@ -93,11 +93,19 @@ class SchemaBasedParser(FileParserPlugin):
                     return False
 
         if "header_pattern" in rules:
-            if not re.search(rules["header_pattern"], first_line):
+            try:
+                if not re.search(rules["header_pattern"], first_line[:1000]):
+                    return False
+            except re.error:
+                logger.warning("Invalid header_pattern regex: %s", rules["header_pattern"])
                 return False
 
         if "filename_pattern" in rules:
-            if not re.search(rules["filename_pattern"], filename, re.IGNORECASE):
+            try:
+                if not re.search(rules["filename_pattern"], filename[:500], re.IGNORECASE):
+                    return False
+            except re.error:
+                logger.warning("Invalid filename_pattern regex: %s", rules["filename_pattern"])
                 return False
 
         return True

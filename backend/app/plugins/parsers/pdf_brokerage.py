@@ -64,7 +64,7 @@ INSTITUTION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"Fidelity", re.IGNORECASE), "Fidelity"),
 ]
 
-MODEL = "claude-sonnet-4-5-20250929"
+MODEL = settings.AI_MODEL_NAME
 
 
 class PDFBrokerageParser(FileParserPlugin):

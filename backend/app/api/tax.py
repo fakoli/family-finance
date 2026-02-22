@@ -25,7 +25,7 @@ router = APIRouter(prefix="/tax", tags=["tax"])
 
 @router.get("/summary", response_model=dict)
 async def tax_summary(
-    year: int = Query(..., description="Tax year"),
+    year: int = Query(..., ge=2000, le=2100, description="Tax year"),
     current_user: User = Depends(get_current_user),
 ) -> dict:
     """Tax summary for a year."""
@@ -40,7 +40,7 @@ async def tax_summary(
 
 @router.get("/documents", response_model=dict)
 async def tax_documents(
-    year: int = Query(..., description="Tax year"),
+    year: int = Query(..., ge=2000, le=2100, description="Tax year"),
     current_user: User = Depends(get_current_user),
 ) -> dict:
     """All tax documents with status for a year."""
@@ -56,7 +56,7 @@ async def tax_documents(
 
 @router.get("/income-breakdown", response_model=dict)
 async def income_breakdown(
-    year: int = Query(..., description="Tax year"),
+    year: int = Query(..., ge=2000, le=2100, description="Tax year"),
     current_user: User = Depends(get_current_user),
 ) -> dict:
     """Income sources breakdown for a year."""
@@ -71,7 +71,7 @@ async def income_breakdown(
 
 @router.get("/deductible", response_model=dict)
 async def tax_deductible(
-    year: int = Query(..., description="Tax year"),
+    year: int = Query(..., ge=2000, le=2100, description="Tax year"),
     current_user: User = Depends(get_current_user),
 ) -> dict:
     """Tax-deductible transactions for a year."""

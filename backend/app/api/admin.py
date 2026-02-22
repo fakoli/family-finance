@@ -25,36 +25,49 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> dict:
-    result = await db.execute(select(User).order_by(User.created_at.desc()))
-    users = result.scalars().all()
+    acct_count_sq = (
+        select(func.count(Account.id))
+        .where(Account.user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+        .label("account_count")
+    )
+    txn_count_sq = (
+        select(func.count(Transaction.id))
+        .join(Account, Transaction.account_id == Account.id)
+        .where(Account.user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+        .label("transaction_count")
+    )
+    import_count_sq = (
+        select(func.count(ImportJob.id))
+        .where(ImportJob.user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+        .label("import_count")
+    )
 
-    user_data = []
-    for user in users:
-        acct_count = await db.scalar(
-            select(func.count(Account.id)).where(Account.user_id == user.id)
+    result = await db.execute(
+        select(User, acct_count_sq, txn_count_sq, import_count_sq).order_by(User.created_at.desc())
+    )
+    rows = result.all()
+
+    user_data = [
+        AdminUserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            is_active=user.is_active,
+            is_admin=user.is_admin,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            account_count=acct_count or 0,
+            transaction_count=txn_count or 0,
+            import_count=import_count or 0,
         )
-        txn_count = await db.scalar(
-            select(func.count(Transaction.id))
-            .join(Account, Transaction.account_id == Account.id)
-            .where(Account.user_id == user.id)
-        )
-        import_count = await db.scalar(
-            select(func.count(ImportJob.id)).where(ImportJob.user_id == user.id)
-        )
-        user_data.append(
-            AdminUserResponse(
-                id=user.id,
-                username=user.username,
-                email=user.email,
-                is_active=user.is_active,
-                is_admin=user.is_admin,
-                created_at=user.created_at,
-                updated_at=user.updated_at,
-                account_count=acct_count or 0,
-                transaction_count=txn_count or 0,
-                import_count=import_count or 0,
-            )
-        )
+        for user, acct_count, txn_count, import_count in rows
+    ]
 
     return {"data": user_data, "total": len(user_data)}
 
@@ -130,47 +143,66 @@ async def system_stats(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> dict:
-    total_users = await db.scalar(select(func.count(User.id))) or 0
-    active_users = await db.scalar(select(func.count(User.id)).where(User.is_active.is_(True))) or 0
-    total_transactions = await db.scalar(select(func.count(Transaction.id))) or 0
-    total_import_jobs = await db.scalar(select(func.count(ImportJob.id))) or 0
-    completed_import_jobs = (
-        await db.scalar(select(func.count(ImportJob.id)).where(ImportJob.status == "completed"))
-        or 0
-    )
-    failed_import_jobs = (
-        await db.scalar(select(func.count(ImportJob.id)).where(ImportJob.status == "failed")) or 0
-    )
-    partially_failed_import_jobs = (
-        await db.scalar(
-            select(func.count(ImportJob.id)).where(ImportJob.status == "partially_failed")
+    # Single query for user + transaction counts
+    from sqlalchemy import case
+
+    user_row = (
+        await db.execute(
+            select(
+                func.count(User.id).label("total"),
+                func.count(case((User.is_active.is_(True), User.id))).label("active"),
+            )
         )
-        or 0
-    )
+    ).one()
+
+    total_transactions = await db.scalar(select(func.count(Transaction.id))) or 0
+
+    # Single query for all import job counts
+    import_row = (
+        await db.execute(
+            select(
+                func.count(ImportJob.id).label("total"),
+                func.count(case((ImportJob.status == ImportStatus.COMPLETED, ImportJob.id))).label(
+                    "completed"
+                ),
+                func.count(case((ImportJob.status == ImportStatus.FAILED, ImportJob.id))).label(
+                    "failed"
+                ),
+                func.count(
+                    case((ImportJob.status == ImportStatus.PARTIALLY_FAILED, ImportJob.id))
+                ).label("partially_failed"),
+            )
+        )
+    ).one()
 
     return {
         "data": {
-            "total_users": total_users,
-            "active_users": active_users,
+            "total_users": user_row.total,
+            "active_users": user_row.active,
             "total_transactions": total_transactions,
-            "total_import_jobs": total_import_jobs,
-            "completed_import_jobs": completed_import_jobs,
-            "failed_import_jobs": failed_import_jobs,
-            "partially_failed_import_jobs": partially_failed_import_jobs,
+            "total_import_jobs": import_row.total,
+            "completed_import_jobs": import_row.completed,
+            "failed_import_jobs": import_row.failed,
+            "partially_failed_import_jobs": import_row.partially_failed,
         }
     }
 
 
 @router.get("/import-jobs", response_model=dict)
 async def all_import_jobs(
+    skip: int = 0,
+    limit: int = 50,
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> dict:
-    result = await db.execute(select(ImportJob).order_by(ImportJob.created_at.desc()))
+    total = await db.scalar(select(func.count(ImportJob.id))) or 0
+    result = await db.execute(
+        select(ImportJob).order_by(ImportJob.created_at.desc()).offset(skip).limit(min(limit, 200))
+    )
     jobs = result.scalars().all()
     return {
         "data": [ImportJobResponse.model_validate(j) for j in jobs],
-        "total": len(jobs),
+        "total": total,
     }
 
 
