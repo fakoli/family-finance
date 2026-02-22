@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import io
 import logging
 import re
@@ -31,6 +32,16 @@ def extract_text(file_content: bytes) -> str:
 
     _text_cache[key] = text
     return text
+
+
+def pdf_to_base64(file_content: bytes) -> str:
+    """Encode PDF bytes as base64 for Claude's document API."""
+    return base64.standard_b64encode(file_content).decode("utf-8")
+
+
+def is_image_based_pdf(file_content: bytes) -> bool:
+    """Check if a PDF is image-based (no extractable text)."""
+    return not extract_text(file_content).strip()
 
 
 def clear_text_cache() -> None:

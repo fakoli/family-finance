@@ -22,14 +22,29 @@ logger = logging.getLogger(__name__)
 def save_brokerage_holdings(
     db: Session, user_id: uuid.UUID, parsed_data: list[dict], job: ImportJob
 ) -> None:
-    """Save brokerage holdings from parsed PDF data."""
-    # parsed_data is a list where the first item has _document_type, institution_name, etc.
-    # and has a "holdings" key with the actual holdings list
-    first = parsed_data[0] if parsed_data else {}
-    holdings_data = first.get("holdings", [])
-    institution_name = first.get("institution_name", "Unknown")
-    account_name = first.get("account_name", institution_name)
-    snapshot_date_str = first.get("snapshot_date", "")
+    """Save brokerage holdings from parsed PDF data.
+
+    The parser returns a flat list where each item is a holding dict with keys like
+    symbol, name, quantity, market_value_cents, institution_name, account_name, snapshot_date.
+    """
+    if not parsed_data:
+        return
+
+    first = parsed_data[0]
+
+    # The parser returns each holding as a separate item in the flat list.
+    # If the first item has a "holdings" key, use the nested format (legacy);
+    # otherwise treat the entire list as holdings.
+    if "holdings" in first:
+        holdings_data = first.get("holdings", [])
+        institution_name = first.get("institution_name", "Unknown")
+        account_name = first.get("account_name", institution_name)
+        snapshot_date_str = first.get("snapshot_date", "")
+    else:
+        holdings_data = parsed_data
+        institution_name = first.get("institution_name", "Unknown")
+        account_name = first.get("account_name", institution_name)
+        snapshot_date_str = first.get("snapshot_date", "")
 
     # Get or create institution and account
     institution = _get_or_create_institution_sync(db, institution_name)

@@ -39,6 +39,26 @@ BANK_STATEMENT_KEYWORDS = [
     "Account Activity",
 ]
 
+# Keywords that indicate a document is PRIMARILY a tax form (not just mentioning taxes)
+TAX_FORM_PRIMARY_KEYWORDS = [
+    "Form 1099",
+    "1099 Composite",
+    "Consolidated Form 1099",
+    "Tax Reporting Statement",
+    "Wage and Tax Statement",
+    "W-2",
+    "1098",
+    "1099-G",
+]
+
+# Keywords that indicate an investment/brokerage report (not a tax form)
+INVESTMENT_REPORT_KEYWORDS = [
+    "Investment Report",
+    "Brokerage Statement",
+    "Account Statement",
+    "Statement Period",
+]
+
 INSTITUTION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"Charles\s*Schwab|Schwab", re.IGNORECASE), "Schwab"),
     (re.compile(r"Fidelity", re.IGNORECASE), "Fidelity"),
@@ -60,6 +80,18 @@ class PDFBrokerageParser(FileParserPlugin):
                 return False
 
             text_lower = text.lower()
+
+            # Check if this is primarily a tax form vs. an investment report
+            tax_primary = sum(
+                1 for kw in TAX_FORM_PRIMARY_KEYWORDS if kw.lower() in text_lower
+            )
+            investment_report = sum(
+                1 for kw in INVESTMENT_REPORT_KEYWORDS if kw.lower() in text_lower
+            )
+
+            # Reject if primarily a tax form and not an investment report
+            if tax_primary > 0 and investment_report == 0:
+                return False
 
             # Reject if bank statement keywords dominate
             bank_count = sum(1 for kw in BANK_STATEMENT_KEYWORDS if kw.lower() in text_lower)

@@ -10,7 +10,12 @@ import anthropic
 from app.config import settings
 from app.plugins import registry
 from app.plugins.base import FileParserPlugin
-from app.plugins.parsers._pdf_utils import extract_text, strip_code_fences
+from app.plugins.parsers._pdf_utils import (
+    extract_text,
+    is_image_based_pdf,
+    pdf_to_base64,
+    strip_code_fences,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +83,15 @@ FORM_EXTRACTION_INSTRUCTIONS = {
 }
 
 
+TAX_FILENAME_PATTERNS = [
+    re.compile(r"w-?2", re.IGNORECASE),
+    re.compile(r"1099", re.IGNORECASE),
+    re.compile(r"1098", re.IGNORECASE),
+    re.compile(r"tax", re.IGNORECASE),
+    re.compile(r"mortgage.interest", re.IGNORECASE),
+]
+
+
 class PDFTaxFormParser(FileParserPlugin):
     name = "pdf_tax"
     supported_extensions = [".pdf"]
@@ -87,22 +101,28 @@ class PDFTaxFormParser(FileParserPlugin):
             return False
         try:
             text = extract_text(file_content)
-            if not text:
-                return False
 
-            text_lower = text.lower()
-            return any(kw.lower() in text_lower for kw in TAX_FORM_KEYWORDS)
+            # If text is available, check content keywords
+            if text:
+                text_lower = text.lower()
+                return any(kw.lower() in text_lower for kw in TAX_FORM_KEYWORDS)
+
+            # For image-based PDFs (no extractable text), check filename patterns
+            filename_lower = filename.lower()
+            return any(p.search(filename_lower) for p in TAX_FILENAME_PATTERNS)
         except Exception:
             logger.exception("PDFTaxFormParser.detect failed")
             return False
 
     async def parse(self, file_content: bytes, filename: str) -> list[dict[str, Any]]:
         text = extract_text(file_content)
-        if not text:
-            logger.warning("No text extracted from PDF: %s", filename)
-            return []
+        use_vision = is_image_based_pdf(file_content)
 
-        form_type = _detect_form_type(text)
+        if text:
+            form_type = _detect_form_type(text)
+        else:
+            # For image-based PDFs, infer form type from filename
+            form_type = _detect_form_type(filename)
 
         # Build the extraction instructions for this form type
         extraction_detail = FORM_EXTRACTION_INSTRUCTIONS.get(form_type, "")
@@ -111,7 +131,7 @@ class PDFTaxFormParser(FileParserPlugin):
                 "Extract the most important fields you can identify from this tax form."
             )
 
-        prompt = (
+        prompt_text = (
             f"You are extracting key data from a tax form ({form_type}).\n\n"
             f"Extract the most important fields for this form type:\n\n"
             f"{extraction_detail}\n\n"
@@ -119,16 +139,43 @@ class PDFTaxFormParser(FileParserPlugin):
             f"Also extract: issuer (employer/payer/lender name), tax_year\n\n"
             f'Return JSON: {{ "form_type": "...", "tax_year": ..., '
             f'"issuer": "...", "extracted_data": {{ ... }} }}\n'
-            f"Output ONLY valid JSON.\n\n"
-            f"Document text:\n{text}"
+            f"Output ONLY valid JSON."
         )
 
         try:
             client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+            if use_vision:
+                # Send the PDF as a document for Claude to read visually
+                b64_data = pdf_to_base64(file_content)
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "document",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "application/pdf",
+                                    "data": b64_data,
+                                },
+                            },
+                            {"type": "text", "text": prompt_text},
+                        ],
+                    }
+                ]
+            else:
+                messages = [
+                    {
+                        "role": "user",
+                        "content": f"{prompt_text}\n\nDocument text:\n{text}",
+                    }
+                ]
+
             message = await client.messages.create(
                 model=MODEL,
                 max_tokens=4096,
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
             )
             raw = message.content[0].text.strip()
             raw = strip_code_fences(raw)
