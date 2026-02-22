@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from typing import Any
 
 import pytest
@@ -72,7 +73,7 @@ async def _setup_data(db: AsyncSession) -> dict:
 
     txn = Transaction(
         account_id=acct.id,
-        date="2025-01-15",
+        date=date(2025, 1, 15),
         amount_cents=5000,
         description="Whole Foods Market",
         merchant_name="Whole Foods",
@@ -110,7 +111,7 @@ async def test_categorize_batch_transactions(async_db: AsyncSession):
     acct = result.scalar_one()
     txn2 = Transaction(
         account_id=acct.id,
-        date="2025-01-20",
+        date=date(2025, 1, 20),
         amount_cents=3000,
         description="Trader Joe's",
     )
