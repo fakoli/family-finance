@@ -37,9 +37,7 @@ class AIProviderPlugin(ABC):
         """Suggest a category for a transaction description."""
 
     @abstractmethod
-    async def categorize_batch(
-        self, transactions: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    async def categorize_batch(self, transactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Categorize a batch of transactions. Returns list of dicts with keys:
         category, confidence, merchant_normalized."""
 

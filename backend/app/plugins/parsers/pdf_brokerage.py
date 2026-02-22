@@ -47,7 +47,6 @@ INSTITUTION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
 MODEL = "claude-sonnet-4-5-20250929"
 
 
-
 class PDFBrokerageParser(FileParserPlugin):
     name = "pdf_brokerage"
     supported_extensions = [".pdf"]

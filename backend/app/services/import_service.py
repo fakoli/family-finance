@@ -392,10 +392,7 @@ def run_import_sync(
             institution = inst_cache[inst_name]
 
             # Account
-            acct_key = (
-                f"{inst_name}|{row['account_name']}"
-                f"|{row.get('account_number_last4', '')}"
-            )
+            acct_key = f"{inst_name}|{row['account_name']}|{row.get('account_number_last4', '')}"
             if acct_key not in acct_cache:
                 acct_cache[acct_key] = _get_or_create_account_sync(
                     db,
@@ -416,17 +413,13 @@ def run_import_sync(
             # Parse date
             txn_date = date.fromisoformat(row["date"])
             original_date = (
-                date.fromisoformat(row["original_date"])
-                if row.get("original_date")
-                else None
+                date.fromisoformat(row["original_date"]) if row.get("original_date") else None
             )
 
             # Deduplicate
             use_fuzzy = row.get("_use_fuzzy_dedup", False)
             if use_fuzzy:
-                is_dup = _is_fuzzy_duplicate_sync(
-                    db, account.id, txn_date, row["amount_cents"]
-                )
+                is_dup = _is_fuzzy_duplicate_sync(db, account.id, txn_date, row["amount_cents"])
             else:
                 is_dup = _is_duplicate_sync(
                     db, account.id, txn_date, row["amount_cents"], row["description"]

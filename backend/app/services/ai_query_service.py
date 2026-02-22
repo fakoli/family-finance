@@ -20,8 +20,7 @@ def _get_ai_provider(provider_name: str | None = None) -> AIProviderPlugin:
     provider = registry.get("ai", name)
     if provider is None:
         raise ValueError(
-            f"AI provider '{name}' not found. "
-            f"Available: {list(registry.get_all('ai').keys())}"
+            f"AI provider '{name}' not found. Available: {list(registry.get_all('ai').keys())}"
         )
     return provider  # type: ignore[return-value]
 
@@ -63,9 +62,7 @@ async def answer_question(
     ]
 
     # Account balances
-    accounts_result = await db.execute(
-        select(Account).where(Account.user_id == user_id)
-    )
+    accounts_result = await db.execute(select(Account).where(Account.user_id == user_id))
     accounts = accounts_result.scalars().all()
     account_balances = [
         {

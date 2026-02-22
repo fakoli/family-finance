@@ -41,7 +41,6 @@ FORM_TYPE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
 MODEL = "claude-sonnet-4-5-20250929"
 
 
-
 def _detect_form_type(text: str) -> str:
     """Detect the tax form type from extracted text."""
     for pattern, form_type in FORM_TYPE_PATTERNS:

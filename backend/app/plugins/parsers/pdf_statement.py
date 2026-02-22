@@ -68,7 +68,6 @@ ACCOUNT_LAST4_PATTERN = re.compile(
 MODEL = "claude-sonnet-4-5-20250929"
 
 
-
 class PDFStatementParser(FileParserPlugin):
     name = "pdf_statement"
     supported_extensions = [".pdf"]

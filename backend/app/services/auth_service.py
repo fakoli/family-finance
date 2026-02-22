@@ -37,9 +37,7 @@ def decode_access_token(token: str) -> uuid.UUID | None:
         return None
 
 
-async def register_user(
-    db: AsyncSession, username: str, email: str, password: str
-) -> User:
+async def register_user(db: AsyncSession, username: str, email: str, password: str) -> User:
     user = User(
         username=username,
         email=email,
@@ -51,9 +49,7 @@ async def register_user(
     return user
 
 
-async def authenticate_user(
-    db: AsyncSession, username: str, password: str
-) -> User | None:
+async def authenticate_user(db: AsyncSession, username: str, password: str) -> User | None:
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar_one_or_none()
     if user is None or not verify_password(password, user.hashed_password):

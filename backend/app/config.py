@@ -7,9 +7,7 @@ class Settings(BaseSettings):
     model_config = {"env_file": "../.env", "extra": "ignore"}
 
     # Database
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://familyfinance:changeme@postgres:5432/familyfinance"
-    )
+    DATABASE_URL: str = "postgresql+asyncpg://familyfinance:changeme@postgres:5432/familyfinance"
 
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"

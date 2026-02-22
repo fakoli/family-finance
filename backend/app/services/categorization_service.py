@@ -22,8 +22,7 @@ def _get_ai_provider(provider_name: str | None = None) -> AIProviderPlugin:
     provider = registry.get("ai", name)
     if provider is None:
         raise ValueError(
-            f"AI provider '{name}' not found. "
-            f"Available: {list(registry.get_all('ai').keys())}"
+            f"AI provider '{name}' not found. Available: {list(registry.get_all('ai').keys())}"
         )
     return provider  # type: ignore[return-value]
 
@@ -51,9 +50,7 @@ async def categorize_transaction(
 ) -> dict[str, Any]:
     provider = _get_ai_provider(provider_name)
 
-    result = await db.execute(
-        select(Transaction).where(Transaction.id == transaction_id)
-    )
+    result = await db.execute(select(Transaction).where(Transaction.id == transaction_id))
     txn = result.scalar_one_or_none()
     if txn is None:
         raise ValueError(f"Transaction {transaction_id} not found")
@@ -87,9 +84,7 @@ async def categorize_batch(
 ) -> list[dict[str, Any]]:
     provider = _get_ai_provider(provider_name)
 
-    result = await db.execute(
-        select(Transaction).where(Transaction.id.in_(transaction_ids))
-    )
+    result = await db.execute(select(Transaction).where(Transaction.id.in_(transaction_ids)))
     transactions = result.scalars().all()
 
     if not transactions:
@@ -103,21 +98,28 @@ async def categorize_batch(
         if txn is None:
             continue
         ordered_ids.append(tid)
-        txn_dicts.append({
-            "description": txn.description,
-            "merchant_name": txn.merchant_name,
-            "amount_cents": txn.amount_cents,
-        })
+        txn_dicts.append(
+            {
+                "description": txn.description,
+                "merchant_name": txn.merchant_name,
+                "amount_cents": txn.amount_cents,
+            }
+        )
 
     ai_results = await provider.categorize_batch(txn_dicts)
 
     output: list[dict[str, Any]] = []
     for i, tid in enumerate(ordered_ids):
         txn = txn_map[tid]
-        ai_result = ai_results[i] if i < len(ai_results) else {
-            "category": "Uncategorized", "confidence": 0.0,
-            "merchant_normalized": None,
-        }
+        ai_result = (
+            ai_results[i]
+            if i < len(ai_results)
+            else {
+                "category": "Uncategorized",
+                "confidence": 0.0,
+                "merchant_normalized": None,
+            }
+        )
 
         cat_name = ai_result.get("category", "Uncategorized")
         category = await _match_category(db, cat_name)
@@ -128,12 +130,14 @@ async def categorize_batch(
         if merchant_normalized and txn.merchant_name:
             txn.merchant_name = merchant_normalized
 
-        output.append({
-            "transaction_id": tid,
-            "category_name": category.name if category else cat_name,
-            "confidence": ai_result.get("confidence", 0.5),
-            "merchant_normalized": merchant_normalized,
-        })
+        output.append(
+            {
+                "transaction_id": tid,
+                "category_name": category.name if category else cat_name,
+                "confidence": ai_result.get("confidence", 0.5),
+                "merchant_normalized": merchant_normalized,
+            }
+        )
 
     await db.commit()
     return output
@@ -145,9 +149,7 @@ async def recategorize_uncategorized(
     provider_name: str | None = None,
 ) -> dict[str, Any]:
     # Find all transactions with "Uncategorized" category belonging to this user
-    uncategorized = await db.execute(
-        select(Category).where(Category.name == "Uncategorized")
-    )
+    uncategorized = await db.execute(select(Category).where(Category.name == "Uncategorized"))
     uncat = uncategorized.scalar_one_or_none()
     if uncat is None:
         return {"categorized": 0, "total": 0}

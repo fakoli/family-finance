@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
-class DocumentType(str, enum.Enum):
+class DocumentType(enum.StrEnum):
     BANK_STATEMENT = "bank_statement"
     CREDIT_CARD_STATEMENT = "credit_card_statement"
     MORTGAGE_STATEMENT = "mortgage_statement"

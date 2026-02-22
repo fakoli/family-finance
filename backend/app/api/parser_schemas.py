@@ -48,9 +48,7 @@ async def list_schemas(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> dict:
-    result = await db.execute(
-        select(ParserSchema).order_by(ParserSchema.created_at.desc())
-    )
+    result = await db.execute(select(ParserSchema).order_by(ParserSchema.created_at.desc()))
     schemas = result.scalars().all()
     return {
         "data": [ParserSchemaResponse.model_validate(s) for s in schemas],
@@ -64,9 +62,7 @@ async def get_schema(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> dict:
-    result = await db.execute(
-        select(ParserSchema).where(ParserSchema.id == schema_id)
-    )
+    result = await db.execute(select(ParserSchema).where(ParserSchema.id == schema_id))
     schema = result.scalar_one_or_none()
     if schema is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schema not found")
@@ -80,9 +76,7 @@ async def update_schema(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> dict:
-    result = await db.execute(
-        select(ParserSchema).where(ParserSchema.id == schema_id)
-    )
+    result = await db.execute(select(ParserSchema).where(ParserSchema.id == schema_id))
     schema = result.scalar_one_or_none()
     if schema is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schema not found")
@@ -102,9 +96,7 @@ async def delete_schema(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(get_admin_user),
 ) -> None:
-    result = await db.execute(
-        select(ParserSchema).where(ParserSchema.id == schema_id)
-    )
+    result = await db.execute(select(ParserSchema).where(ParserSchema.id == schema_id))
     schema = result.scalar_one_or_none()
     if schema is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schema not found")

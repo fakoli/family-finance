@@ -70,9 +70,7 @@ async def query_finances(
     current_user: User = Depends(get_current_user),
 ) -> dict:
     try:
-        result = await answer_question(
-            db, current_user.id, body.question, body.provider
-        )
+        result = await answer_question(db, current_user.id, body.question, body.provider)
         return {"data": QueryResponse(**result)}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

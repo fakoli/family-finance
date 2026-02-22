@@ -54,12 +54,10 @@ async def list_transactions(
     if search is not None:
         pattern = f"%{search}%"
         stmt = stmt.where(
-            Transaction.description.ilike(pattern)
-            | Transaction.merchant_name.ilike(pattern)
+            Transaction.description.ilike(pattern) | Transaction.merchant_name.ilike(pattern)
         )
         count_stmt = count_stmt.where(
-            Transaction.description.ilike(pattern)
-            | Transaction.merchant_name.ilike(pattern)
+            Transaction.description.ilike(pattern) | Transaction.merchant_name.ilike(pattern)
         )
 
     total = (await db.execute(count_stmt)).scalar() or 0

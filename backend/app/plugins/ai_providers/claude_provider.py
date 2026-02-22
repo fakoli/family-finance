@@ -13,13 +13,35 @@ from app.plugins.base import AIProviderPlugin
 logger = logging.getLogger(__name__)
 
 CATEGORIES = [
-    "Dining & Drinks", "Software & Tech", "Shopping", "Entertainment & Rec.",
-    "Auto & Transport", "Groceries", "Bills & Utilities", "Health & Wellness",
-    "Home & Garden", "Income", "Travel & Vacation", "Medical", "Personal Care",
-    "Education", "Pets", "Business", "Fees & Charges", "Legal",
-    "Gifts & Donations", "Taxes", "Insurance", "Kids", "Cash & ATM",
-    "Investments", "Savings Transfer", "Credit Card Payment",
-    "Internal Transfers", "Subscriptions", "Uncategorized",
+    "Dining & Drinks",
+    "Software & Tech",
+    "Shopping",
+    "Entertainment & Rec.",
+    "Auto & Transport",
+    "Groceries",
+    "Bills & Utilities",
+    "Health & Wellness",
+    "Home & Garden",
+    "Income",
+    "Travel & Vacation",
+    "Medical",
+    "Personal Care",
+    "Education",
+    "Pets",
+    "Business",
+    "Fees & Charges",
+    "Legal",
+    "Gifts & Donations",
+    "Taxes",
+    "Insurance",
+    "Kids",
+    "Cash & ATM",
+    "Investments",
+    "Savings Transfer",
+    "Credit Card Payment",
+    "Internal Transfers",
+    "Subscriptions",
+    "Uncategorized",
 ]
 
 CATEGORY_LIST_STR = ", ".join(CATEGORIES)
@@ -62,9 +84,7 @@ class ClaudeProvider(AIProviderPlugin):
             logger.exception("Claude categorize failed")
             return None
 
-    async def categorize_batch(
-        self, transactions: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    async def categorize_batch(self, transactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         try:
             client = self._client()
             txn_lines = []
@@ -73,8 +93,7 @@ class ClaudeProvider(AIProviderPlugin):
                 merchant = txn.get("merchant_name", "") or ""
                 amount = txn.get("amount_cents", 0)
                 txn_lines.append(
-                    f"{i}. description=\"{desc}\" merchant=\"{merchant}\" "
-                    f"amount_cents={amount}"
+                    f'{i}. description="{desc}" merchant="{merchant}" amount_cents={amount}'
                 )
             txn_block = "\n".join(txn_lines)
 
@@ -122,17 +141,18 @@ class ClaudeProvider(AIProviderPlugin):
                             break
                     if not matched:
                         cat = "Uncategorized"
-                output.append({
-                    "category": cat,
-                    "confidence": float(item.get("confidence", 0.5)),
-                    "merchant_normalized": item.get("merchant_normalized"),
-                })
+                output.append(
+                    {
+                        "category": cat,
+                        "confidence": float(item.get("confidence", 0.5)),
+                        "merchant_normalized": item.get("merchant_normalized"),
+                    }
+                )
             return output
         except Exception:
             logger.exception("Claude categorize_batch failed")
             return [
-                {"category": "Uncategorized", "confidence": 0.0,
-                 "merchant_normalized": None}
+                {"category": "Uncategorized", "confidence": 0.0, "merchant_normalized": None}
                 for _ in transactions
             ]
 
@@ -153,8 +173,7 @@ class ClaudeProvider(AIProviderPlugin):
                     {
                         "role": "user",
                         "content": (
-                            f"Here is my financial data:\n{context_str}\n\n"
-                            f"Question: {question}"
+                            f"Here is my financial data:\n{context_str}\n\nQuestion: {question}"
                         ),
                     }
                 ],
@@ -196,9 +215,7 @@ class ClaudeProvider(AIProviderPlugin):
                 desc = txn.get("description", "")
                 amount = txn.get("amount_cents", 0)
                 cat = txn.get("category_name", "Uncategorized")
-                txn_lines.append(
-                    f"- {desc}: ${amount / 100:.2f} ({cat})"
-                )
+                txn_lines.append(f"- {desc}: ${amount / 100:.2f} ({cat})")
             txn_block = "\n".join(txn_lines)
 
             message = await client.messages.create(
