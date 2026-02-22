@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
-from typing import Any, Union
 
 from app.plugins.base import (
     AIProviderPlugin,
@@ -11,7 +10,7 @@ from app.plugins.base import (
     NotificationPlugin,
 )
 
-PluginBase = Union[FileParserPlugin, DataSourcePlugin, AIProviderPlugin, NotificationPlugin]
+PluginBase = FileParserPlugin | DataSourcePlugin | AIProviderPlugin | NotificationPlugin
 
 _registry: dict[str, dict[str, PluginBase]] = {
     "parser": {},

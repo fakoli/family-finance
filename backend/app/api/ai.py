@@ -13,11 +13,11 @@ from app.schemas.ai import (
     QueryRequest,
     QueryResponse,
 )
+from app.services.ai_query_service import answer_question
 from app.services.categorization_service import (
     categorize_batch,
     recategorize_uncategorized,
 )
-from app.services.ai_query_service import answer_question
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 

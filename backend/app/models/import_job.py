@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Integer, ForeignKey, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,7 +32,12 @@ class ImportJob(Base):
     filename: Mapped[str] = mapped_column(String(255))
     source_type: Mapped[str] = mapped_column(String(50))
     status: Mapped[ImportStatus] = mapped_column(
-        Enum(ImportStatus, name="import_status_enum", create_constraint=False, values_callable=lambda e: [m.value for m in e]),
+        Enum(
+            ImportStatus,
+            name="import_status_enum",
+            create_constraint=False,
+            values_callable=lambda e: [m.value for m in e],
+        ),
         default=ImportStatus.PENDING,
     )
     total_rows: Mapped[int] = mapped_column(Integer, default=0)

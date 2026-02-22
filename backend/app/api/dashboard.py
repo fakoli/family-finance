@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import case, select, func as sql_func
+from sqlalchemy import case, select
+from sqlalchemy import func as sql_func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user

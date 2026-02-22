@@ -1,7 +1,8 @@
 """CLI for user management and import debugging.
 
 Usage:
-    python -m app.cli create-user --username admin --email admin@example.com --password secret --admin
+    python -m app.cli create-user --username admin --email admin@example.com \
+        --password secret --admin
     python -m app.cli list-users
     python -m app.cli set-admin --username admin --admin
     python -m app.cli set-admin --username admin --no-admin
