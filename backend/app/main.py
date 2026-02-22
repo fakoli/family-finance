@@ -11,11 +11,14 @@ from app.api import (
     admin,
     ai,
     auth,
+    brokerage,
     categories,
     dashboard,
     imports,
     overview,
     parser_schemas,
+    statements,
+    tax,
     transactions,
 )
 from app.config import settings
@@ -49,6 +52,9 @@ app.include_router(ai.router, prefix=api_prefix)
 app.include_router(admin.router, prefix=api_prefix)
 app.include_router(overview.router, prefix=api_prefix)
 app.include_router(parser_schemas.router, prefix=api_prefix)
+app.include_router(statements.router, prefix=api_prefix)
+app.include_router(brokerage.router, prefix=api_prefix)
+app.include_router(tax.router, prefix=api_prefix)
 
 
 @app.get("/api/v1/health")
