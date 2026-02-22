@@ -85,22 +85,25 @@ export function InsightsSection({ spending, balanceSheet }: InsightsSectionProps
   const warnings = insights.filter((i) => i.type === 'warning')
 
   return (
-    <div>
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    <div className="animate-fade-in-up">
+      <h3 className="mb-3 text-base font-semibold text-slate-900">
         Insights
       </h3>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
-          <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-700">
-            <CheckCircle2 size={16} />
+        <div className="rounded-xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 shadow-sm">
+          <h4 className="mb-3 flex items-center gap-2 text-base font-semibold text-emerald-700">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100">
+              <CheckCircle2 size={16} className="text-emerald-600" />
+            </div>
             What's Working Well
           </h4>
           {positives.length === 0 ? (
             <p className="text-sm text-emerald-600">Import data to see positive trends</p>
           ) : (
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {positives.map((item, i) => (
-                <li key={i} className="text-sm text-emerald-700">
+                <li key={i} className="flex items-start gap-2 text-sm text-emerald-700">
+                  <span className="mt-1.5 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-400" />
                   {item.text}
                 </li>
               ))}
@@ -108,17 +111,20 @@ export function InsightsSection({ spending, balanceSheet }: InsightsSectionProps
           )}
         </div>
 
-        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
-          <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-700">
-            <AlertTriangle size={16} />
+        <div className="rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-sm">
+          <h4 className="mb-3 flex items-center gap-2 text-base font-semibold text-amber-700">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100">
+              <AlertTriangle size={16} className="text-amber-600" />
+            </div>
             Areas to Watch
           </h4>
           {warnings.length === 0 ? (
             <p className="text-sm text-amber-600">No warnings — looking good!</p>
           ) : (
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {warnings.map((item, i) => (
-                <li key={i} className="text-sm text-amber-700">
+                <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
+                  <span className="mt-1.5 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-400" />
                   {item.text}
                 </li>
               ))}

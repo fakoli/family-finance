@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { useMerchantDeepDive, useSpendingBreakdown } from '@/api/hooks'
 import { formatCents } from '@/utils/format'
+import { chartTooltipStyle, chartGrid, chartAxis, chartColors, formatChartCurrency } from '@/utils/chartTheme'
 
 interface MerchantSpotlightProps {
   year: number
@@ -44,13 +45,13 @@ export function MerchantSpotlight({ year }: MerchantSpotlightProps) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h3 className="text-base font-semibold text-slate-900">
           Merchant Spotlight
         </h3>
         <select
           value={selectedMerchant}
           onChange={(e) => setSelectedMerchant(e.target.value)}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-slate-400 focus:outline-none"
+          className="rounded-xl border border-slate-200/60 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm transition-all focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         >
           {topMerchants.map((m) => (
             <option key={m.merchant_name} value={m.merchant_name}>
@@ -60,23 +61,23 @@ export function MerchantSpotlight({ year }: MerchantSpotlightProps) {
         </select>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <div className="rounded-xl border border-slate-200/60 bg-white p-5 shadow-sm">
         {dive ? (
           <>
-            <div className="mb-4 flex flex-wrap gap-4">
+            <div className="mb-4 flex flex-wrap gap-6">
               <div>
-                <span className="text-xs text-slate-400">Total</span>
-                <p className="text-lg font-bold text-slate-900">{formatCents(dive.total_cents)}</p>
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Total</span>
+                <p className="text-lg font-bold tracking-tight text-slate-900">{formatCents(dive.total_cents)}</p>
               </div>
               <div>
-                <span className="text-xs text-slate-400">Orders</span>
-                <p className="text-lg font-bold text-slate-900">
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Orders</span>
+                <p className="text-lg font-bold tracking-tight text-slate-900">
                   {dive.order_count.toLocaleString()}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-slate-400">Avg Order</span>
-                <p className="text-lg font-bold text-slate-900">
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Avg Order</span>
+                <p className="text-lg font-bold tracking-tight text-slate-900">
                   {formatCents(dive.average_order_cents)}
                 </p>
               </div>
@@ -85,20 +86,20 @@ export function MerchantSpotlight({ year }: MerchantSpotlightProps) {
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                  <XAxis dataKey="name" fontSize={12} />
+                  <CartesianGrid stroke={chartGrid.stroke} strokeDasharray={chartGrid.strokeDasharray} vertical={false} />
+                  <XAxis dataKey="name" {...chartAxis} />
                   <YAxis
-                    tickFormatter={(v: number) => `$${v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v}`}
-                    fontSize={12}
+                    tickFormatter={formatChartCurrency}
+                    {...chartAxis}
                   />
                   <Tooltip
                     formatter={(value: number, name: string) => [
                       name === 'amount' ? `$${value.toFixed(2)}` : value,
                       name === 'amount' ? 'Amount' : 'Orders',
                     ]}
-                    contentStyle={{ fontSize: 12 }}
+                    contentStyle={chartTooltipStyle}
                   />
-                  <Bar dataKey="amount" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amount" fill={chartColors.brand} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -108,7 +109,7 @@ export function MerchantSpotlight({ year }: MerchantSpotlightProps) {
             )}
 
             {dive.total_cents > 1000_00 && (
-              <div className="mt-4 rounded-md border-l-4 border-l-amber-400 bg-amber-50 px-4 py-3">
+              <div className="mt-4 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3">
                 <p className="text-sm text-amber-800">
                   Cutting {dive.merchant_name} spending in half would save ~
                   {formatCents(Math.round(dive.total_cents / 2))}/year

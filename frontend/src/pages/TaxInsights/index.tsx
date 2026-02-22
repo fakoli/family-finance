@@ -5,8 +5,9 @@ import {
   Percent,
   FileText,
   AlertTriangle,
-  CheckCircle,
+  CheckCircle2,
   Info,
+  CircleCheck,
 } from 'lucide-react'
 import {
   useTaxSummary,
@@ -16,7 +17,8 @@ import {
 } from '@/api/hooks'
 import { formatCents, formatDate } from '@/utils/format'
 import { PageHeader } from '@/components/PageHeader'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { KPICard } from '@/components/KPICard'
+import { PageSkeleton } from '@/components/Skeleton'
 import type { TaxSummary, TaxDocument, IncomeBreakdownItem, Transaction } from '@/api/types'
 
 export default function TaxInsightsPage() {
@@ -27,11 +29,11 @@ export default function TaxInsightsPage() {
   const { data: deductible, isLoading: loadingDeductible } = useTaxDeductibleTransactions(year)
 
   if (loadingSummary) {
-    return <LoadingSpinner className="py-24" />
+    return <PageSkeleton />
   }
 
   return (
-    <div>
+    <div className="animate-fade-in-up">
       <PageHeader
         title="Tax Insights"
         description="Tax documents and analysis"
@@ -39,7 +41,7 @@ export default function TaxInsightsPage() {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900"
+            className="rounded-xl border border-slate-200/60 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm transition-all duration-200 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
           >
             {[2024, 2025, 2026].map((y) => (
               <option key={y} value={y}>
@@ -50,70 +52,54 @@ export default function TaxInsightsPage() {
         }
       />
 
-      {summary && <KPICards summary={summary} />}
+      <div className="space-y-8">
+        {summary && <KPICards summary={summary} />}
 
-      <div className="mt-6">
         <DocumentChecklist documents={documents ?? []} loading={loadingDocuments} />
-      </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <IncomeBreakdownTable items={incomeBreakdown ?? []} loading={loadingIncome} />
-        <DeductibleTransactions transactions={deductible ?? []} loading={loadingDeductible} />
-      </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <IncomeBreakdownTable items={incomeBreakdown ?? []} loading={loadingIncome} />
+          <DeductibleTransactions transactions={deductible ?? []} loading={loadingDeductible} />
+        </div>
 
-      {summary && (
-        <div className="mt-6">
+        {summary && (
           <InsightsSection
             summary={summary}
             incomeSourceCount={incomeBreakdown?.length ?? 0}
           />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
 
 function KPICards({ summary }: { summary: TaxSummary }) {
-  const cards = [
-    {
-      label: 'Gross Income',
-      value: formatCents(summary.gross_income_cents),
-      icon: DollarSign,
-      color: 'text-emerald-600',
-    },
-    {
-      label: 'Total Tax Paid',
-      value: formatCents(summary.total_tax_cents),
-      icon: Receipt,
-      color: 'text-rose-600',
-    },
-    {
-      label: 'Effective Tax Rate',
-      value: `${summary.effective_rate.toFixed(1)}%`,
-      icon: Percent,
-      color: 'text-amber-600',
-    },
-    {
-      label: 'Total Deductions',
-      value: formatCents(summary.total_deductions_cents),
-      icon: FileText,
-      color: 'text-indigo-600',
-    },
-  ]
-
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {cards.map((card) => (
-        <div key={card.label} className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-2 text-slate-500">
-            <card.icon size={16} />
-            <span className="text-xs font-medium uppercase tracking-wide">{card.label}</span>
-          </div>
-          <div className="mt-2 text-xl font-semibold">
-            <span className={card.color}>{card.value}</span>
-          </div>
-        </div>
-      ))}
+      <KPICard
+        label="Gross Income"
+        value={formatCents(summary.gross_income_cents)}
+        icon={DollarSign}
+        variant="income"
+      />
+      <KPICard
+        label="Total Tax Paid"
+        value={formatCents(summary.total_tax_cents)}
+        icon={Receipt}
+        variant="expense"
+      />
+      <KPICard
+        label="Effective Tax Rate"
+        value={`${summary.effective_rate.toFixed(1)}%`}
+        icon={Percent}
+        variant="neutral"
+      />
+      <KPICard
+        label="Total Deductions"
+        value={formatCents(summary.total_deductions_cents)}
+        icon={FileText}
+        variant="info"
+      />
     </div>
   )
 }
@@ -126,38 +112,41 @@ function DocumentChecklist({
   loading: boolean
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-sm font-medium text-slate-900">Document Checklist</h3>
+    <div className="rounded-xl border border-slate-200/60 bg-white shadow-sm">
+      <div className="border-b border-slate-200/60 px-5 py-4 lg:px-6">
+        <h3 className="text-base font-semibold text-slate-900">Document Checklist</h3>
+      </div>
       {loading ? (
-        <LoadingSpinner className="py-16" />
+        <div className="flex items-center justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+        </div>
       ) : documents.length === 0 ? (
         <p className="py-16 text-center text-sm text-slate-400">No tax documents imported</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-left">
-                <th className="pb-2 pr-4 font-medium text-slate-500">Form Type</th>
-                <th className="pb-2 pr-4 font-medium text-slate-500">Issuer</th>
-                <th className="pb-2 pr-4 font-medium text-slate-500">Tax Year</th>
-                <th className="pb-2 font-medium text-slate-500">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((doc) => (
-                <tr key={doc.id} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 pr-4 font-medium text-slate-900">{doc.form_type}</td>
-                  <td className="py-2 pr-4 text-slate-700">{doc.issuer}</td>
-                  <td className="py-2 pr-4 tabular-nums text-slate-700">{doc.tax_year}</td>
-                  <td className="py-2">
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                      ON HAND
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="divide-y divide-slate-100">
+          {documents.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center gap-4 px-5 py-3.5 transition-colors duration-150 hover:bg-slate-50/50 lg:px-6"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+                <CircleCheck size={18} className="text-emerald-500" />
+              </div>
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-900">{doc.form_type}</p>
+                  <p className="truncate text-xs text-slate-500">{doc.issuer}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-xs tabular-nums text-slate-500">{doc.tax_year}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                    <CheckCircle2 size={12} />
+                    On Hand
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -175,37 +164,44 @@ function IncomeBreakdownTable({
   const total = sorted.reduce((sum, item) => sum + item.amount_cents, 0)
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-sm font-medium text-slate-900">Income Breakdown</h3>
+    <div className="rounded-xl border border-slate-200/60 bg-white shadow-sm">
+      <div className="border-b border-slate-200/60 px-5 py-4 lg:px-6">
+        <h3 className="text-base font-semibold text-slate-900">Income Breakdown</h3>
+      </div>
       {loading ? (
-        <LoadingSpinner className="py-16" />
+        <div className="flex items-center justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+        </div>
       ) : sorted.length === 0 ? (
         <p className="py-16 text-center text-sm text-slate-400">No income data available</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left">
-                <th className="pb-2 pr-4 font-medium text-slate-500">Source</th>
-                <th className="pb-2 pr-4 font-medium text-slate-500">Description</th>
-                <th className="pb-2 text-right font-medium text-slate-500">Amount</th>
+              <tr className="border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-slate-100/50 text-left">
+                <th className="px-5 py-3 font-medium text-slate-500 lg:px-6">Source</th>
+                <th className="px-3 py-3 font-medium text-slate-500">Description</th>
+                <th className="px-5 py-3 text-right font-medium text-slate-500 lg:px-6">Amount</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {sorted.map((item, i) => (
-                <tr key={i} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 pr-4 font-medium text-slate-900">{item.source}</td>
-                  <td className="py-2 pr-4 text-slate-700">{item.description}</td>
-                  <td className="py-2 text-right tabular-nums text-slate-900">
+                <tr
+                  key={i}
+                  className="transition-colors duration-150 hover:bg-slate-50/50"
+                >
+                  <td className="px-5 py-3 font-medium text-slate-900 lg:px-6">{item.source}</td>
+                  <td className="px-3 py-3 text-slate-600">{item.description}</td>
+                  <td className="px-5 py-3 text-right tabular-nums font-medium text-slate-900 lg:px-6">
                     {formatCents(item.amount_cents)}
                   </td>
                 </tr>
               ))}
-              <tr className="border-t border-slate-300">
-                <td className="py-2 pr-4 font-semibold text-slate-900" colSpan={2}>
+              <tr className="border-t-2 border-slate-200 bg-slate-50/50">
+                <td className="px-5 py-3 font-semibold text-slate-900 lg:px-6" colSpan={2}>
                   Total
                 </td>
-                <td className="py-2 text-right font-semibold tabular-nums text-slate-900">
+                <td className="px-5 py-3 text-right font-semibold tabular-nums text-slate-900 lg:px-6">
                   {formatCents(total)}
                 </td>
               </tr>
@@ -225,10 +221,14 @@ function DeductibleTransactions({
   loading: boolean
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-sm font-medium text-slate-900">Tax-Deductible Transactions</h3>
+    <div className="rounded-xl border border-slate-200/60 bg-white shadow-sm">
+      <div className="border-b border-slate-200/60 px-5 py-4 lg:px-6">
+        <h3 className="text-base font-semibold text-slate-900">Tax-Deductible Transactions</h3>
+      </div>
       {loading ? (
-        <LoadingSpinner className="py-16" />
+        <div className="flex items-center justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+        </div>
       ) : transactions.length === 0 ? (
         <p className="py-16 text-center text-sm text-slate-400">
           No tax-deductible transactions found
@@ -237,22 +237,27 @@ function DeductibleTransactions({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left">
-                <th className="pb-2 pr-4 font-medium text-slate-500">Date</th>
-                <th className="pb-2 pr-4 font-medium text-slate-500">Description</th>
-                <th className="pb-2 pr-4 font-medium text-slate-500">Account</th>
-                <th className="pb-2 text-right font-medium text-slate-500">Amount</th>
+              <tr className="border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-slate-100/50 text-left">
+                <th className="px-5 py-3 font-medium text-slate-500 lg:px-6">Date</th>
+                <th className="px-3 py-3 font-medium text-slate-500">Description</th>
+                <th className="px-3 py-3 font-medium text-slate-500">Account</th>
+                <th className="px-5 py-3 text-right font-medium text-slate-500 lg:px-6">Amount</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {transactions.map((tx) => (
-                <tr key={tx.id} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 pr-4 tabular-nums text-slate-700">{formatDate(tx.date)}</td>
-                  <td className="py-2 pr-4 text-slate-900">
+                <tr
+                  key={tx.id}
+                  className="transition-colors duration-150 hover:bg-slate-50/50"
+                >
+                  <td className="px-5 py-3 tabular-nums text-slate-600 lg:px-6">
+                    {formatDate(tx.date)}
+                  </td>
+                  <td className="px-3 py-3 text-slate-900">
                     {tx.custom_name ?? tx.merchant_name ?? tx.description}
                   </td>
-                  <td className="py-2 pr-4 text-slate-600">{tx.account?.name ?? '--'}</td>
-                  <td className="py-2 text-right tabular-nums font-medium text-emerald-600">
+                  <td className="px-3 py-3 text-slate-500">{tx.account?.name ?? '--'}</td>
+                  <td className="px-5 py-3 text-right tabular-nums font-medium text-emerald-600 lg:px-6">
                     {formatCents(Math.abs(tx.amount_cents))}
                   </td>
                 </tr>
@@ -275,60 +280,79 @@ function InsightsSection({
   const highRate = summary.effective_rate > 25
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-sm font-medium text-slate-900">Insights</h3>
-      <div className="space-y-3">
+    <div>
+      <h3 className="mb-4 text-base font-semibold text-slate-900">Insights</h3>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Effective Tax Rate insight */}
         <div
-          className={`flex items-start gap-3 rounded-md p-3 ${
-            highRate ? 'bg-amber-50' : 'bg-emerald-50'
+          className={`rounded-xl border p-5 shadow-sm ${
+            highRate
+              ? 'border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50'
+              : 'border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-teal-50'
           }`}
         >
-          {highRate ? (
-            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
-          ) : (
-            <CheckCircle size={18} className="mt-0.5 shrink-0 text-emerald-600" />
-          )}
-          <div>
-            <p
-              className={`text-sm font-medium ${highRate ? 'text-amber-800' : 'text-emerald-800'}`}
+          <div className="flex items-center gap-2">
+            {highRate ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+                <AlertTriangle size={16} className="text-amber-600" />
+              </div>
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+                <CheckCircle2 size={16} className="text-emerald-600" />
+              </div>
+            )}
+            <span
+              className={`text-sm font-semibold ${highRate ? 'text-amber-800' : 'text-emerald-800'}`}
             >
-              Effective Tax Rate: {summary.effective_rate.toFixed(1)}%
-            </p>
-            <p className={`text-xs ${highRate ? 'text-amber-700' : 'text-emerald-700'}`}>
-              {highRate
-                ? 'Your effective rate is above 25%. Consider consulting a tax professional for optimization strategies.'
-                : 'Your effective tax rate is within a healthy range.'}
-            </p>
+              Effective Tax Rate
+            </span>
           </div>
+          <p
+            className={`mt-2 text-2xl font-bold tracking-tight ${
+              highRate ? 'text-amber-900' : 'text-emerald-900'
+            }`}
+          >
+            {summary.effective_rate.toFixed(1)}%
+          </p>
+          <p className={`mt-1 text-xs leading-relaxed ${highRate ? 'text-amber-700' : 'text-emerald-700'}`}>
+            {highRate
+              ? 'Above 25% -- consider consulting a tax professional for optimization strategies.'
+              : 'Within a healthy range for your income level.'}
+          </p>
         </div>
 
         {/* Deductions insight */}
-        <div className="flex items-start gap-3 rounded-md bg-indigo-50 p-3">
-          <Info size={18} className="mt-0.5 shrink-0 text-indigo-600" />
-          <div>
-            <p className="text-sm font-medium text-indigo-800">
-              Total Deductions: {formatCents(summary.total_deductions_cents)}
-            </p>
-            <p className="text-xs text-indigo-700">
-              Track all deductible expenses throughout the year to maximize your tax savings.
-            </p>
+        <div className="rounded-xl border border-indigo-200/60 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
+              <Info size={16} className="text-indigo-600" />
+            </div>
+            <span className="text-sm font-semibold text-indigo-800">Total Deductions</span>
           </div>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-indigo-900">
+            {formatCents(summary.total_deductions_cents)}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-indigo-700">
+            Track all deductible expenses throughout the year to maximize your tax savings.
+          </p>
         </div>
 
         {/* Income sources insight */}
-        <div className="flex items-start gap-3 rounded-md bg-slate-50 p-3">
-          <Info size={18} className="mt-0.5 shrink-0 text-slate-600" />
-          <div>
-            <p className="text-sm font-medium text-slate-800">
-              {incomeSourceCount} Income Source{incomeSourceCount !== 1 ? 's' : ''} Detected
-            </p>
-            <p className="text-xs text-slate-600">
-              {incomeSourceCount > 1
-                ? 'Multiple income sources may have different tax implications. Ensure each source is properly documented.'
-                : 'One income source identified. Ensure all W-2 or 1099 documents are accounted for.'}
-            </p>
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-gray-50 p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100">
+              <Info size={16} className="text-slate-600" />
+            </div>
+            <span className="text-sm font-semibold text-slate-800">Income Sources</span>
           </div>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+            {incomeSourceCount}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-600">
+            {incomeSourceCount > 1
+              ? 'Multiple income sources may have different tax implications. Ensure proper documentation.'
+              : 'One income source identified. Ensure all W-2 or 1099 documents are accounted for.'}
+          </p>
         </div>
       </div>
     </div>

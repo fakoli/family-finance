@@ -21,6 +21,7 @@ interface DataTableProps<T> {
   isLoading?: boolean
   emptyTitle?: string
   emptyDescription?: string
+  emptyIllustration?: string
 }
 
 export function DataTable<T>({
@@ -34,6 +35,7 @@ export function DataTable<T>({
   isLoading,
   emptyTitle = 'No data',
   emptyDescription,
+  emptyIllustration,
 }: DataTableProps<T>) {
   const totalPages = Math.ceil(total / perPage)
 
@@ -42,15 +44,15 @@ export function DataTable<T>({
   }
 
   if (data.length === 0) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} />
+    return <EmptyState title={emptyTitle} description={emptyDescription} illustration={emptyIllustration} />
   }
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-slate-200/60 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
+            <tr className="border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-slate-100/50">
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -71,7 +73,8 @@ export function DataTable<T>({
                 onClick={() => onRowClick?.(item)}
                 className={clsx(
                   'transition-colors',
-                  onRowClick && 'cursor-pointer hover:bg-slate-50',
+                  onRowClick && 'cursor-pointer hover:bg-teal-50/30',
+                  !onRowClick && i % 2 === 1 && 'bg-slate-50/30',
                 )}
               >
                 {columns.map((col) => (
@@ -94,17 +97,17 @@ export function DataTable<T>({
             <button
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
-              className="rounded p-1 hover:bg-slate-100 disabled:opacity-40"
+              className="rounded-lg p-1.5 hover:bg-slate-100 disabled:opacity-40 transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
-            <span className="px-2">
+            <span className="rounded-lg bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700">
               {page} / {totalPages}
             </span>
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
-              className="rounded p-1 hover:bg-slate-100 disabled:opacity-40"
+              className="rounded-lg p-1.5 hover:bg-slate-100 disabled:opacity-40 transition-colors"
             >
               <ChevronRight size={18} />
             </button>

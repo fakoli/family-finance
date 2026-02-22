@@ -1,6 +1,6 @@
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
+import { chartTooltipStyle, chartGrid, chartAxis, formatChartCurrency } from '@/utils/chartTheme'
 import type { MonthlyTrend } from '@/api/types'
 
 interface IncomeExpenseTrendChartProps {
@@ -24,37 +25,61 @@ export function IncomeExpenseTrendChart({ data }: IncomeExpenseTrendChartProps) 
   }))
 
   return (
-    <div>
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    <div className="animate-fade-in-up">
+      <h3 className="mb-3 text-base font-semibold text-slate-900">
         Monthly Income vs Expenses
       </h3>
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <div className="rounded-xl border border-slate-200/60 bg-white p-5 shadow-sm">
         {chartData.length === 0 ? (
           <p className="py-8 text-center text-sm text-slate-400">No data</p>
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis dataKey="name" fontSize={12} />
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={chartGrid.stroke} strokeDasharray={chartGrid.strokeDasharray} vertical={false} />
+              <XAxis dataKey="name" {...chartAxis} />
               <YAxis
-                tickFormatter={(v: number) =>
-                  v >= 1000 ? `$${(v / 1000).toFixed(0)}K` : `$${v}`
-                }
-                fontSize={12}
+                tickFormatter={formatChartCurrency}
+                {...chartAxis}
               />
               <Tooltip
                 formatter={(value: number, name: string) => [
                   `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                   name === 'income' ? 'Income' : 'Expenses',
                 ]}
-                contentStyle={{ fontSize: 12 }}
+                contentStyle={chartTooltipStyle}
               />
               <Legend
-                formatter={(value: string) => (value === 'income' ? 'Income' : 'Expenses')}
+                formatter={(value: string) => (
+                  <span className="text-sm text-slate-600">
+                    {value === 'income' ? 'Income' : 'Expenses'}
+                  </span>
+                )}
               />
-              <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Area
+                type="monotone"
+                dataKey="income"
+                stroke="#10b981"
+                fill="url(#incomeGrad)"
+                strokeWidth={2}
+              />
+              <Area
+                type="monotone"
+                dataKey="expenses"
+                stroke="#f43f5e"
+                fill="url(#expenseGrad)"
+                strokeWidth={2}
+              />
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </div>

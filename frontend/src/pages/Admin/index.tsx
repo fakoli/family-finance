@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Users, Settings, Upload } from 'lucide-react'
 import { clsx } from 'clsx'
 import { PageHeader } from '@/components/PageHeader'
 import { UsersTab } from './UsersTab'
@@ -6,9 +7,9 @@ import { SystemTab } from './SystemTab'
 import { ImportJobsTab } from './ImportJobsTab'
 
 const tabs = [
-  { id: 'users', label: 'Users' },
-  { id: 'system', label: 'System' },
-  { id: 'imports', label: 'Import Jobs' },
+  { id: 'users', label: 'Users', icon: Users },
+  { id: 'system', label: 'System', icon: Settings },
+  { id: 'imports', label: 'Import Jobs', icon: Upload },
 ] as const
 
 type TabId = (typeof tabs)[number]['id']
@@ -20,23 +21,26 @@ export default function AdminPage() {
     <div>
       <PageHeader title="Admin" description="Manage users and system settings" />
 
-      <div className="mb-6 border-b border-slate-200">
-        <nav className="-mb-px flex gap-4">
-          {tabs.map((tab) => (
+      {/* Pill-style tabs */}
+      <div className="mb-6 inline-flex rounded-xl bg-slate-100 p-1">
+        {tabs.map((tab) => {
+          const Icon = tab.icon
+          return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={clsx(
-                'border-b-2 px-1 pb-3 text-sm font-medium transition-colors',
+                'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200',
                 activeTab === tab.id
-                  ? 'border-slate-900 text-slate-900'
-                  : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700',
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700',
               )}
             >
+              <Icon size={15} />
               {tab.label}
             </button>
-          ))}
-        </nav>
+          )
+        })}
       </div>
 
       {activeTab === 'users' && <UsersTab />}

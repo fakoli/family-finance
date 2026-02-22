@@ -10,7 +10,7 @@ export function YearSelector({ year, onChange }: YearSelectorProps) {
     <select
       value={year}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+      className="rounded-xl border border-slate-200/60 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
     >
       {YEARS.map((y) => (
         <option key={y} value={y}>

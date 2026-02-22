@@ -12,26 +12,26 @@ export function SpendingBreakdownTable({ data }: SpendingBreakdownTableProps) {
   const VERY_HIGH_SPEND_THRESHOLD = 3000_00 // $3,000/month triggers red
 
   return (
-    <div>
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    <div className="animate-fade-in-up">
+      <h3 className="mb-3 text-base font-semibold text-slate-900">
         {data.year} Spending Breakdown
       </h3>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-slate-200/60 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-2.5 text-left font-semibold text-slate-700">Category</th>
-              <th className="px-4 py-2.5 text-right font-semibold text-slate-700">Annual</th>
-              <th className="px-4 py-2.5 text-right font-semibold text-slate-700">Monthly Avg</th>
-              <th className="hidden px-4 py-2.5 text-right font-semibold text-slate-700 sm:table-cell">
+            <tr className="border-b border-slate-200 bg-slate-50/80">
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Category</th>
+              <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Annual</th>
+              <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Avg</th>
+              <th className="hidden px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">
                 Txns
               </th>
-              <th className="hidden px-4 py-2.5 text-left font-semibold text-slate-700 md:table-cell">
+              <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">
                 Top Merchant
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-slate-100/80">
             {data.categories.map((cat) => {
               const isHighSpend = cat.monthly_average_cents >= HIGH_SPEND_THRESHOLD
               const isVeryHighSpend = cat.monthly_average_cents >= VERY_HIGH_SPEND_THRESHOLD
@@ -40,32 +40,32 @@ export function SpendingBreakdownTable({ data }: SpendingBreakdownTableProps) {
               return (
                 <tr
                   key={cat.category_name}
-                  className={
+                  className={`transition-colors hover:bg-slate-50/50 ${
                     isVeryHighSpend
                       ? 'bg-rose-50/50'
                       : isHighSpend
                         ? 'bg-amber-50/50'
                         : ''
-                  }
+                  }`}
                 >
-                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                  <td className="px-5 py-3 font-medium text-slate-800">
                     {cat.category_name}
                     {isVeryHighSpend && (
-                      <span className="ml-2 inline-block rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+                      <span className="ml-2 inline-block rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
                         HIGH
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-700">
                     {formatCents(cat.annual_cents)}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-slate-500">
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-500">
                     {formatCents(cat.monthly_average_cents)}
                   </td>
-                  <td className="hidden px-4 py-2.5 text-right tabular-nums text-slate-400 sm:table-cell">
+                  <td className="hidden px-5 py-3 text-right tabular-nums text-slate-400 sm:table-cell">
                     {cat.transaction_count.toLocaleString()}
                   </td>
-                  <td className="hidden px-4 py-2.5 text-slate-400 md:table-cell">
+                  <td className="hidden px-5 py-3 text-slate-400 md:table-cell">
                     {topMerchant
                       ? `${topMerchant.merchant_name} (${formatCents(topMerchant.total_cents)})`
                       : '\u2014'}
@@ -75,16 +75,16 @@ export function SpendingBreakdownTable({ data }: SpendingBreakdownTableProps) {
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t border-slate-200 bg-slate-50">
-              <td className="px-4 py-2.5 font-bold text-slate-900">TOTAL</td>
-              <td className="px-4 py-2.5 text-right font-bold tabular-nums text-slate-900">
+            <tr className="border-t border-slate-200 bg-slate-50/80">
+              <td className="px-5 py-3 font-bold text-slate-900">TOTAL</td>
+              <td className="px-5 py-3 text-right font-bold tabular-nums text-slate-900">
                 {formatCents(data.total_spending_cents)}
               </td>
-              <td className="px-4 py-2.5 text-right font-bold tabular-nums text-slate-700">
+              <td className="px-5 py-3 text-right font-bold tabular-nums text-slate-700">
                 {formatCents(data.monthly_average_cents)}
               </td>
-              <td className="hidden px-4 py-2.5 sm:table-cell" />
-              <td className="hidden px-4 py-2.5 md:table-cell" />
+              <td className="hidden px-5 py-3 sm:table-cell" />
+              <td className="hidden px-5 py-3 md:table-cell" />
             </tr>
           </tfoot>
         </table>
